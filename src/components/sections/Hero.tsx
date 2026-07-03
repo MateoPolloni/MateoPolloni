@@ -254,100 +254,8 @@ function DettagliLabels() {
 }
 
 /* ═══════════════════════════════════════════════
-   DETTAGLI SCENE — Three.js sports car
+   DETTAGLI SCENE — real Ferrari GLTF model
 ═══════════════════════════════════════════════ */
-function buildCar(THREE: typeof import('three')) {
-  const g = new THREE.Group();
-
-  // Automotive clearcoat paint — visible even on dark colors
-  const body = new THREE.MeshPhysicalMaterial({
-    color: '#0d0d1a',        // dark midnight-blue black
-    metalness: 0.88,
-    roughness: 0.08,
-    clearcoat: 1.0,          // lacquer layer catches light dramatically
-    clearcoatRoughness: 0.04,
-  });
-  const glass = new THREE.MeshPhysicalMaterial({
-    color: '#1a1a30', metalness:0.05, roughness:0.03,
-    transparent:true, opacity:0.55, transmission:0.2,
-  });
-  const chrome = new THREE.MeshStandardMaterial({ color:'#d8d8e8', metalness:1.00, roughness:0.022 });
-  const tire   = new THREE.MeshStandardMaterial({ color:'#080809', metalness:0.02, roughness:0.90 });
-  const brakeL = new THREE.MeshStandardMaterial({ color:'#ff2200', emissive:'#ff0500', emissiveIntensity:5, roughness:0.25 });
-  const carbon = new THREE.MeshStandardMaterial({ color:'#111114', metalness:0.3,  roughness:0.55 }); // diffuser/splitter
-
-  const add = (geo:ThreeNS.BufferGeometry, mat:ThreeNS.Material, x=0,y=0,z=0,rx=0,ry=0,rz=0) => {
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(x,y,z); mesh.rotation.set(rx,ry,rz); mesh.castShadow=true;
-    g.add(mesh); return mesh;
-  };
-
-  // ── BODY ──────────────────────────────────────────
-  add(new THREE.BoxGeometry(4.0,0.42,2.10),  body, 0,0.08);          // main slab
-  add(new THREE.BoxGeometry(3.8,0.08,2.24),  body, 0,-0.20);         // lower sill
-  // Front
-  add(new THREE.BoxGeometry(1.42,0.20,2.02), body,-1.62,0.24, 0, 0.14); // hood slope
-  add(new THREE.BoxGeometry(0.28,0.28,2.06), body,-2.12,-0.06);      // front bumper
-  add(new THREE.BoxGeometry(0.50,0.04,2.15), carbon,-2.04,-0.26);    // front splitter
-  // Front intake vents
-  [-0.60,0.60].forEach(z=> add(new THREE.BoxGeometry(0.20,0.10,0.42), carbon,-2.10,-0.12,z));
-  // Cabin — low roof for exotic silhouette
-  add(new THREE.BoxGeometry(1.58,0.40,1.62), body, 0.05,0.46);
-  // Windshield (steep rake)
-  add(new THREE.BoxGeometry(0.58,0.38,1.58), glass,-0.76,0.48, 0,-0.44);
-  // Rear glass
-  add(new THREE.BoxGeometry(0.52,0.34,1.56), glass, 0.88,0.46, 0, 0.42);
-  // Rear haunches — wide fender flares
-  add(new THREE.BoxGeometry(0.90,0.44,2.20), body, 1.56,0.24, 0,-0.05);
-  // Rear fascia
-  add(new THREE.BoxGeometry(0.24,0.48,2.12), body, 2.02,0.04);
-  // Diffuser fins (lower rear)
-  for(let i=-3;i<=3;i++) add(new THREE.BoxGeometry(0.28,0.12,0.04), carbon, 1.88,-0.26,i*0.26);
-  // Side skirts
-  [-1.10,1.10].forEach(z=> add(new THREE.BoxGeometry(3.2,0.06,0.10), body, 0,-0.22,z));
-  // Side air intakes (mid-body)
-  [-1.05,1.05].forEach(z=> add(new THREE.BoxGeometry(0.55,0.14,0.06), carbon, 0.6,0.0,z));
-
-  // ── SPOILER ───────────────────────────────────────
-  add(new THREE.BoxGeometry(1.80,0.06,0.30),  body, 1.90,0.62);      // blade
-  add(new THREE.BoxGeometry(0.06,0.30,0.06), body, 1.90,0.44,-0.62);
-  add(new THREE.BoxGeometry(0.06,0.30,0.06), body, 1.90,0.44, 0.62);
-
-  // ── BRAKE LIGHTS — the hero visual ───────────────
-  add(new THREE.BoxGeometry(0.045,0.055,1.80), brakeL, 2.04,0.15);   // full-width strip
-  [-1.0,1.0].forEach(z=> add(new THREE.BoxGeometry(0.14,0.22,0.28), brakeL, 2.00,0.13,z)); // corner blocks
-  const rearGlow = new THREE.PointLight('#ff0500', 5.0, 6);
-  rearGlow.position.set(2.2, 0.12, 0); g.add(rearGlow);
-  // Floor red bleed
-  const floorRed = new THREE.PointLight('#ff1100', 1.5, 3);
-  floorRed.position.set(2.0,-0.5,0); g.add(floorRed);
-
-  // ── WHEELS ────────────────────────────────────────
-  ([[-1.40,-0.30,1.12],[-1.40,-0.30,-1.12],[1.42,-0.30,1.12],[1.42,-0.30,-1.12]] as [number,number,number][]).forEach(([x,y,z])=>{
-    const t = new THREE.Mesh(new THREE.TorusGeometry(0.46,0.14,14,56), tire);
-    t.position.set(x,y,z); t.rotation.x=Math.PI/2; t.castShadow=true; g.add(t);
-    const side = z>0 ? 0.12 : -0.12;
-    // Rim disc
-    const r = new THREE.Mesh(new THREE.CylinderGeometry(0.36,0.36,0.065,12), chrome);
-    r.position.set(x,y,z+side); r.rotation.x=Math.PI/2; g.add(r);
-    // 10-spoke Y-spoke pattern
-    for(let i=0;i<10;i++){
-      const a=(i/10)*Math.PI*2;
-      const s=new THREE.Mesh(new THREE.BoxGeometry(0.032,0.30,0.032),chrome);
-      s.position.set(x+Math.sin(a)*0.18,y+Math.cos(a)*0.18,z+side); g.add(s);
-    }
-    // Hub
-    const h=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,0.08,18),chrome);
-    h.position.set(x,y,z+side); h.rotation.x=Math.PI/2; g.add(h);
-    // Brake caliper (red, behind wheel)
-    const caliper = new THREE.Mesh(new THREE.BoxGeometry(0.12,0.18,0.08),
-      new THREE.MeshStandardMaterial({ color:'#cc0000', emissive:'#880000', emissiveIntensity:0.5, roughness:0.6 }));
-    caliper.position.set(x,y,z+(z>0 ? 0.04 : -0.04)); g.add(caliper);
-  });
-
-  return g;
-}
-
 function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:number;y:number}> }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
@@ -360,112 +268,159 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
       if(disposed) return;
 
       const scene = new THREE.Scene();
-      scene.background = new THREE.Color('#07070d');
-      scene.fog = new THREE.FogExp2('#07070d', 0.055);
+      scene.background = new THREE.Color('#06060c');
 
       const W=el.offsetWidth, H=el.offsetHeight;
-      const camera = new THREE.PerspectiveCamera(40, W/H, 0.1, 60);
-      camera.position.set(-1.0, 1.0, 4.8);  // closer, lower — more dramatic
-      camera.lookAt(-0.1, 0.05, 0);
+      const camera = new THREE.PerspectiveCamera(38, W/H, 0.1, 60);
+      camera.position.set(3, 1.4, 5.5);
+      camera.lookAt(0, 0.4, 0);
 
       const renderer = new THREE.WebGLRenderer({ canvas:el, antialias:true });
       renderer.setSize(W, H);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 2.4;    // brighter overall exposure
+      renderer.toneMappingExposure = 0.85;
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       cleanups.push(()=>renderer.dispose());
 
-      // Car
-      const car = buildCar(THREE);
-      car.rotation.y = 0.35;
-      scene.add(car);
+      // RoomEnvironment — makes PBR metallic/clearcoat materials look realistic
+      const { RoomEnvironment } = await import('three/examples/jsm/environments/RoomEnvironment.js');
+      if(disposed) return;
+      const pmrem = new THREE.PMREMGenerator(renderer);
+      const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+      scene.environment = envTex;
+      pmrem.dispose();
+
+      // Materials
+      const bodyPaint = new THREE.MeshPhysicalMaterial({
+        color: '#0d0d1c',
+        metalness: 0.9,
+        roughness: 0.05,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.02,
+      });
+      const glassMat = new THREE.MeshPhysicalMaterial({
+        color: '#0a1020', metalness:0.0, roughness:0.0,
+        transparent:true, opacity:0.28, transmission:0.7,
+      });
+      const detailMat = new THREE.MeshStandardMaterial({ color:'#111116', roughness:0.45, metalness:0.3 });
 
       // Platform rings
-      const goldMat = new THREE.MeshStandardMaterial({ color:'#c09a32', emissive:'#8a6820', emissiveIntensity:0.9, metalness:0.88, roughness:0.10 });
-      [2.6, 3.2, 4.0].forEach(r=>{
-        const ring = new THREE.Mesh(new THREE.TorusGeometry(r,0.012,8,80), goldMat);
-        ring.rotation.x = -Math.PI/2; ring.position.y = -0.83; scene.add(ring);
+      const goldMat = new THREE.MeshStandardMaterial({ color:'#c09a32', emissive:'#8a6820', emissiveIntensity:0.8, metalness:0.88, roughness:0.10 });
+      [2.8, 3.5, 4.4].forEach(r=>{
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(r,0.013,8,80), goldMat);
+        ring.rotation.x=-Math.PI/2; ring.position.y=-0.02; scene.add(ring);
       });
-      const platGlow = new THREE.PointLight('#e0a840', 2.0, 9);
-      platGlow.position.y = -0.82; scene.add(platGlow);
+      scene.add(Object.assign(new THREE.PointLight('#e0a840',1.8,10),{position:{x:0,y:-0.0,z:0}}));
 
-      // Ground — mirror-like showroom floor
+      // Mirror floor
       const ground = new THREE.Mesh(
-        new THREE.PlaneGeometry(60,60),
-        new THREE.MeshStandardMaterial({ color:'#040408', metalness:0.99, roughness:0.008 })
+        new THREE.PlaneGeometry(80,80),
+        new THREE.MeshStandardMaterial({ color:'#030306', metalness:0.99, roughness:0.005 })
       );
-      ground.rotation.x = -Math.PI/2; ground.position.y = -0.83;
-      ground.receiveShadow = true; scene.add(ground);
+      ground.rotation.x=-Math.PI/2; ground.position.y=-0.01;
+      ground.receiveShadow=true; scene.add(ground);
 
-      // ── LIGHTS ────────────────────────────────────
-      scene.add(new THREE.AmbientLight('#ffffff', 0.06));
-
-      // KEY — strong warm from upper-front-left (creates the big highlight on bodywork)
-      const key = new THREE.SpotLight('#fff0d8', 22, 35, 0.42, 0.40);
-      key.position.set(-5, 6, 4); key.castShadow = true;
+      // Lights
+      scene.add(new THREE.AmbientLight('#ffffff', 0.08));
+      // Key warm from front-left upper
+      const key = new THREE.SpotLight('#fff4e0', 4.5, 40, 0.40, 0.35);
+      key.position.set(-6, 7, 5); key.castShadow=true;
       key.shadow.mapSize.set(2048,2048); scene.add(key, key.target);
+      // Cold rim from rear-right
+      const rim = new THREE.SpotLight('#b0ccff', 3.5, 30, 0.38, 0.45);
+      rim.position.set(5, 5, -5); scene.add(rim, rim.target);
+      // Subtle counter from rear-left
+      const rimL = new THREE.SpotLight('#7080c0', 1.5, 25, 0.50, 0.65);
+      rimL.position.set(-4, 3, -5); scene.add(rimL, rimL.target);
+      // Soft front fill
+      const fill = new THREE.PointLight('#d0e0ff', 0.8, 25);
+      fill.position.set(0, 1, 7); scene.add(fill);
+      // Underfloor show-car glow
+      const under = new THREE.PointLight('#3020a0', 1.8, 5);
+      under.position.set(0, -0.5, 0); scene.add(under);
+      // Sweep light (roaming)
+      const sweep = new THREE.SpotLight('#ffffff', 2.0, 50, 0.05, 0.9);
+      sweep.position.set(6, 10, 2); scene.add(sweep, sweep.target);
 
-      // RIM — cold blue-white from upper-rear-right (outlines the car silhouette)
-      const rim = new THREE.SpotLight('#b8d0ff', 16, 28, 0.38, 0.50);
-      rim.position.set(5, 4.5, -5); scene.add(rim, rim.target);
+      // Load Ferrari GLTF model
+      let carModel: ThreeNS.Object3D | null = null;
+      try {
+        const { GLTFLoader } = await import('three/examples/jsm/loaders/GLTFLoader.js');
+        if(disposed) return;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const gltf: any = await new Promise((resolve, reject) =>
+          new GLTFLoader().load('https://threejs.org/examples/models/gltf/ferrari.glb', resolve, undefined, reject)
+        );
+        if(disposed) return;
 
-      // COUNTER-RIM — subtle from rear-left (prevents full black on that side)
-      const rimL = new THREE.SpotLight('#8090d0', 6, 22, 0.45, 0.65);
-      rimL.position.set(-4, 2.5, -4); scene.add(rimL, rimL.target);
+        const model: ThreeNS.Object3D = gltf.scene;
+        carModel = model;
+        // Scale and centre
+        const box = new THREE.Box3().setFromObject(model);
+        const size = box.getSize(new THREE.Vector3());
+        const s = 3.8 / size.x;
+        model.scale.setScalar(s);
+        box.setFromObject(model);
+        const centre = box.getCenter(new THREE.Vector3());
+        model.position.x -= centre.x;
+        model.position.y -= box.min.y;
+        model.position.z -= centre.z;
 
-      // FILL — very soft front
-      const fill = new THREE.PointLight('#c8d8ff', 1.2, 20);
-      fill.position.set(0, 0.5, 6); scene.add(fill);
+        // Apply materials
+        model.traverse((child: ThreeNS.Object3D) => {
+          const mesh = child as ThreeNS.Mesh;
+          if (!mesh.isMesh) return;
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          const name = mesh.name.toLowerCase();
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const origMat = mesh.material as any;
+          if (name.includes('glass') || name.includes('window') || origMat?.transparent) {
+            mesh.material = glassMat;
+          } else if (name.includes('rim') || name.includes('wheel') || name.includes('tire') || name.includes('tyre')) {
+            // keep original wheel materials
+          } else if (name.includes('interior') || name.includes('seat') || name.includes('detail')) {
+            mesh.material = detailMat;
+          } else {
+            mesh.material = bodyPaint;
+          }
+        });
 
-      // OVERHEAD — roof highlight
-      const over = new THREE.DirectionalLight('#d0e0ff', 0.55);
-      over.position.set(0, 10, 0); scene.add(over);
+        scene.add(model);
+      } catch(e) {
+        console.warn('Ferrari model unavailable:', e);
+      }
 
-      // Underfloor show-car glow (blue-purple)
-      const under = new THREE.PointLight('#4030aa', 2.5, 4);
-      under.position.set(0, -0.7, 0); scene.add(under);
-
-      // SWEEP — moving spotlight for upper-area light streak
-      const sweep = new THREE.SpotLight('#ffffff', 3.0, 40, 0.06, 0.85);
-      sweep.position.set(6, 9, 2); scene.add(sweep, sweep.target);
-
-      let autoRot = 0.35, mrY=0,tmrY=0,mrX=0,tmrX=0, sweepT=0;
+      // RAF loop
+      let autoRot=0.3, mrY=0,tY=0,mrX=0,tX=0,sweepT=0;
       let raf: number;
       const loop = () => {
-        raf = requestAnimationFrame(loop);
+        raf=requestAnimationFrame(loop);
         if(document.hidden||disposed) return;
-        autoRot += 0.0022; sweepT += 0.008;
-
-        tmrY = (mouseRef.current.x-0.5)*0.65;
-        tmrX = (mouseRef.current.y-0.5)*-0.28;
-        mrY += (tmrY-mrY)*0.025; mrX += (tmrX-mrX)*0.025;
-
-        car.rotation.y = autoRot + mrY;
-        car.rotation.x = mrX * 0.14;
-        car.position.y = Math.sin(autoRot*0.75)*0.055;
-
-        // Key light drifts — creates dynamic body reflections
-        key.position.x = -4 + mouseRef.current.x*1.8;
-        key.position.z = 3.5 - mouseRef.current.y*1.0;
-
-        // Animated sweep light (the upper-right light streak effect)
-        sweep.position.x = 5 + Math.sin(sweepT)*3;
-        sweep.position.z = 2 + Math.cos(sweepT*0.7)*2;
-
-        renderer.render(scene, camera);
+        autoRot+=0.0018; sweepT+=0.007;
+        tY=(mouseRef.current.x-0.5)*0.6; tX=(mouseRef.current.y-0.5)*-0.22;
+        mrY+=(tY-mrY)*0.025; mrX+=(tX-mrX)*0.025;
+        if(carModel){
+          carModel.rotation.y=autoRot+mrY;
+          carModel.rotation.x=mrX*0.12;
+          carModel.position.y=Math.sin(autoRot*0.8)*0.04;
+        }
+        key.position.x=-6+mouseRef.current.x*2.5;
+        key.position.z= 5-mouseRef.current.y*1.2;
+        sweep.position.x=5+Math.sin(sweepT)*4;
+        sweep.position.z=2+Math.cos(sweepT*0.6)*2;
+        renderer.render(scene,camera);
       };
-      loop();
-      cleanups.push(()=>cancelAnimationFrame(raf));
+      loop(); cleanups.push(()=>cancelAnimationFrame(raf));
 
-      const ro = new ResizeObserver(()=>{
+      const ro=new ResizeObserver(()=>{
         if(disposed) return;
         const w=el.offsetWidth,h=el.offsetHeight;
         camera.aspect=w/h; camera.updateProjectionMatrix(); renderer.setSize(w,h);
       });
-      ro.observe(el);
-      cleanups.push(()=>ro.disconnect());
+      ro.observe(el); cleanups.push(()=>ro.disconnect());
     })();
 
     return ()=>{ disposed=true; cleanups.forEach(fn=>fn()); };
