@@ -279,7 +279,7 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
       renderer.setSize(W, H);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 0.85;
+      renderer.toneMappingExposure = 1.6;
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       cleanups.push(()=>renderer.dispose());
@@ -294,11 +294,11 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
 
       // Materials
       const bodyPaint = new THREE.MeshPhysicalMaterial({
-        color: '#0d0d1c',
-        metalness: 0.9,
-        roughness: 0.05,
+        color: '#181828',       // dark midnight blue — visible but still exotic-dark
+        metalness: 0.85,
+        roughness: 0.08,
         clearcoat: 1.0,
-        clearcoatRoughness: 0.02,
+        clearcoatRoughness: 0.03,
       });
       const glassMat = new THREE.MeshPhysicalMaterial({
         color: '#0a1020', metalness:0.0, roughness:0.0,
@@ -344,20 +344,30 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
       const sweep = new THREE.SpotLight('#ffffff', 2.0, 50, 0.05, 0.9);
       sweep.position.set(6, 10, 2); scene.add(sweep, sweep.target);
 
-      // Load Ferrari GLTF model
+      // Load Ferrari GLTF model (Draco-compressed — DRACOLoader required)
       let carModel: ThreeNS.Object3D | null = null;
       try {
-        const { GLTFLoader } = await import('three/examples/jsm/loaders/GLTFLoader.js');
+        const [{ GLTFLoader }, { DRACOLoader }] = await Promise.all([
+          import('three/examples/jsm/loaders/GLTFLoader.js'),
+          import('three/examples/jsm/loaders/DRACOLoader.js'),
+        ]);
         if(disposed) return;
+
+        const draco = new DRACOLoader();
+        draco.setDecoderPath('https://threejs.org/examples/jsm/libs/draco/gltf/');
+        const loader = new GLTFLoader();
+        loader.setDRACOLoader(draco);
+
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const gltf: any = await new Promise((resolve, reject) =>
-          new GLTFLoader().load('https://threejs.org/examples/models/gltf/ferrari.glb', resolve, undefined, reject)
+          loader.load('https://threejs.org/examples/models/gltf/ferrari.glb', resolve, undefined, reject)
         );
         if(disposed) return;
 
         const model: ThreeNS.Object3D = gltf.scene;
         carModel = model;
-        // Scale and centre
+
+        // Auto-scale and floor-align
         const box = new THREE.Box3().setFromObject(model);
         const size = box.getSize(new THREE.Vector3());
         const s = 3.8 / size.x;
@@ -380,8 +390,8 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
           if (name.includes('glass') || name.includes('window') || origMat?.transparent) {
             mesh.material = glassMat;
           } else if (name.includes('rim') || name.includes('wheel') || name.includes('tire') || name.includes('tyre')) {
-            // keep original wheel materials
-          } else if (name.includes('interior') || name.includes('seat') || name.includes('detail')) {
+            // keep original chrome rims
+          } else if (name.includes('interior') || name.includes('seat') || name.includes('steer')) {
             mesh.material = detailMat;
           } else {
             mesh.material = bodyPaint;
@@ -389,8 +399,9 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
         });
 
         scene.add(model);
+        draco.dispose();
       } catch(e) {
-        console.warn('Ferrari model unavailable:', e);
+        console.warn('Ferrari model failed to load:', e);
       }
 
       // RAF loop
