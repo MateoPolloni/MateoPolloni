@@ -354,13 +354,13 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
         if(disposed) return;
 
         const draco = new DRACOLoader();
-        draco.setDecoderPath('https://threejs.org/examples/jsm/libs/draco/gltf/');
+        draco.setDecoderPath('/draco/');       // served from public/draco/
         const loader = new GLTFLoader();
         loader.setDRACOLoader(draco);
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const gltf: any = await new Promise((resolve, reject) =>
-          loader.load('https://threejs.org/examples/models/gltf/ferrari.glb', resolve, undefined, reject)
+          loader.load('/models/ferrari.glb', resolve, undefined, reject)  // served from public/models/
         );
         if(disposed) return;
 
