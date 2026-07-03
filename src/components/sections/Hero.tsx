@@ -254,7 +254,7 @@ function DettagliLabels() {
 }
 
 /* ═══════════════════════════════════════════════
-   DETTAGLI SCENE — real Ferrari GLTF model
+   DETTAGLI SCENE — Ferrari GLTF, render-first
 ═══════════════════════════════════════════════ */
 function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:number;y:number}> }) {
   const ref = useRef<HTMLCanvasElement>(null);
@@ -267,177 +267,169 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
       const THREE = await import('three');
       if(disposed) return;
 
+      // ── SCENE ─────────────────────────────────
       const scene = new THREE.Scene();
-      scene.background = new THREE.Color('#06060c');
+      scene.background = new THREE.Color('#08080e');
 
-      const W=el.offsetWidth, H=el.offsetHeight;
-      const camera = new THREE.PerspectiveCamera(38, W/H, 0.1, 60);
-      camera.position.set(3, 1.4, 5.5);
-      camera.lookAt(0, 0.4, 0);
+      const W = el.offsetWidth, H = el.offsetHeight;
+      // Camera from Three.js official ferrari example
+      const camera = new THREE.PerspectiveCamera(40, W/H, 0.1, 100);
+      camera.position.set(4.25, 1.4, -4.5);
+      camera.lookAt(0, 0.5, 0);
 
-      const renderer = new THREE.WebGLRenderer({ canvas:el, antialias:true });
+      const renderer = new THREE.WebGLRenderer({ canvas: el, antialias: true });
       renderer.setSize(W, H);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
-      renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.6;
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-      cleanups.push(()=>renderer.dispose());
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.0;
+      cleanups.push(() => renderer.dispose());
 
-      // RoomEnvironment — makes PBR metallic/clearcoat materials look realistic
-      const { RoomEnvironment } = await import('three/examples/jsm/environments/RoomEnvironment.js');
-      if(disposed) return;
-      const pmrem = new THREE.PMREMGenerator(renderer);
-      const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-      scene.environment = envTex;
-      pmrem.dispose();
-
-      // Materials
-      const bodyPaint = new THREE.MeshPhysicalMaterial({
-        color: '#181828',       // dark midnight blue — visible but still exotic-dark
-        metalness: 0.85,
-        roughness: 0.08,
-        clearcoat: 1.0,
-        clearcoatRoughness: 0.03,
-      });
-      const glassMat = new THREE.MeshPhysicalMaterial({
-        color: '#0a1020', metalness:0.0, roughness:0.0,
-        transparent:true, opacity:0.28, transmission:0.7,
-      });
-      const detailMat = new THREE.MeshStandardMaterial({ color:'#111116', roughness:0.45, metalness:0.3 });
+      // ── STATIC SCENE OBJECTS ──────────────────
+      // Ground
+      const ground = new THREE.Mesh(
+        new THREE.PlaneGeometry(100, 100),
+        new THREE.MeshStandardMaterial({ color: '#030308', roughness: 0.02, metalness: 0.98 })
+      );
+      ground.rotation.x = -Math.PI / 2;
+      ground.receiveShadow = true;
+      scene.add(ground);
 
       // Platform rings
-      const goldMat = new THREE.MeshStandardMaterial({ color:'#c09a32', emissive:'#8a6820', emissiveIntensity:0.8, metalness:0.88, roughness:0.10 });
-      [2.8, 3.5, 4.4].forEach(r=>{
-        const ring = new THREE.Mesh(new THREE.TorusGeometry(r,0.013,8,80), goldMat);
-        ring.rotation.x=-Math.PI/2; ring.position.y=-0.02; scene.add(ring);
+      const ringMat = new THREE.MeshStandardMaterial({ color: '#c09a32', emissive: '#7a5f10', emissiveIntensity: 0.7, metalness: 0.9, roughness: 0.1 });
+      [3, 3.8, 4.8].forEach(r => {
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(r, 0.014, 8, 96), ringMat);
+        ring.rotation.x = -Math.PI / 2;
+        scene.add(ring);
       });
-      scene.add(Object.assign(new THREE.PointLight('#e0a840',1.8,10),{position:{x:0,y:-0.0,z:0}}));
 
-      // Mirror floor
-      const ground = new THREE.Mesh(
-        new THREE.PlaneGeometry(80,80),
-        new THREE.MeshStandardMaterial({ color:'#030306', metalness:0.99, roughness:0.005 })
-      );
-      ground.rotation.x=-Math.PI/2; ground.position.y=-0.01;
-      ground.receiveShadow=true; scene.add(ground);
+      // ── LIGHTS ────────────────────────────────
+      scene.add(new THREE.AmbientLight('#ffffff', 0.5));
 
-      // Lights
-      scene.add(new THREE.AmbientLight('#ffffff', 0.08));
-      // Key warm from front-left upper
-      const key = new THREE.SpotLight('#fff4e0', 4.5, 40, 0.40, 0.35);
-      key.position.set(-6, 7, 5); key.castShadow=true;
-      key.shadow.mapSize.set(2048,2048); scene.add(key, key.target);
-      // Cold rim from rear-right
-      const rim = new THREE.SpotLight('#b0ccff', 3.5, 30, 0.38, 0.45);
-      rim.position.set(5, 5, -5); scene.add(rim, rim.target);
-      // Subtle counter from rear-left
-      const rimL = new THREE.SpotLight('#7080c0', 1.5, 25, 0.50, 0.65);
-      rimL.position.set(-4, 3, -5); scene.add(rimL, rimL.target);
-      // Soft front fill
-      const fill = new THREE.PointLight('#d0e0ff', 0.8, 25);
-      fill.position.set(0, 1, 7); scene.add(fill);
-      // Underfloor show-car glow
-      const under = new THREE.PointLight('#3020a0', 1.8, 5);
-      under.position.set(0, -0.5, 0); scene.add(under);
-      // Sweep light (roaming)
-      const sweep = new THREE.SpotLight('#ffffff', 2.0, 50, 0.05, 0.9);
-      sweep.position.set(6, 10, 2); scene.add(sweep, sweep.target);
+      const key = new THREE.SpotLight('#fff5e0', 3, 50, 0.4, 0.5);
+      key.position.set(-4, 6, 4);
+      key.castShadow = true;
+      key.shadow.mapSize.set(1024, 1024);
+      scene.add(key, key.target);
 
-      // Load Ferrari GLTF model (Draco-compressed — DRACOLoader required)
+      const rim = new THREE.SpotLight('#c0d8ff', 2, 40, 0.4, 0.5);
+      rim.position.set(4, 4, -4);
+      scene.add(rim, rim.target);
+
+      const fill = new THREE.PointLight('#d0e0ff', 0.6, 30);
+      fill.position.set(0, 2, 6);
+      scene.add(fill);
+
+      const sweep = new THREE.SpotLight('#ffffff', 1.5, 60, 0.04, 0.9);
+      sweep.position.set(6, 10, 2);
+      scene.add(sweep, sweep.target);
+
+      // ── START RENDERING IMMEDIATELY ───────────
       let carModel: ThreeNS.Object3D | null = null;
+      let autoRot = 0.3, mrY = 0, tY = 0, mrX = 0, tX = 0, sweepT = 0;
+      let raf: number;
+      const loop = () => {
+        raf = requestAnimationFrame(loop);
+        if (document.hidden || disposed) return;
+        autoRot += 0.0018; sweepT += 0.007;
+        tY = (mouseRef.current.x - 0.5) * 0.6; tX = (mouseRef.current.y - 0.5) * -0.2;
+        mrY += (tY - mrY) * 0.025; mrX += (tX - mrX) * 0.025;
+        if (carModel) {
+          carModel.rotation.y = autoRot + mrY;
+          carModel.rotation.x = mrX * 0.1;
+          carModel.position.y = Math.sin(autoRot * 0.8) * 0.04;
+        }
+        key.position.x = -4 + mouseRef.current.x * 2;
+        key.position.z = 4 - mouseRef.current.y;
+        sweep.position.x = 5 + Math.sin(sweepT) * 3;
+        sweep.position.z = 2 + Math.cos(sweepT * 0.6) * 2;
+        renderer.render(scene, camera);
+      };
+      loop();
+      cleanups.push(() => cancelAnimationFrame(raf));
+
+      const ro = new ResizeObserver(() => {
+        if (disposed) return;
+        const w = el.offsetWidth, h = el.offsetHeight;
+        camera.aspect = w / h; camera.updateProjectionMatrix(); renderer.setSize(w, h);
+      });
+      ro.observe(el);
+      cleanups.push(() => ro.disconnect());
+
+      // ── ENVIRONMENT MAP (async, non-blocking) ─
+      try {
+        const { RoomEnvironment } = await import('three/examples/jsm/environments/RoomEnvironment.js');
+        if (!disposed) {
+          const pmrem = new THREE.PMREMGenerator(renderer);
+          scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+          pmrem.dispose();
+        }
+      } catch (e) { console.warn('RoomEnvironment:', e); }
+
+      // ── LOAD MODEL (async, non-blocking) ──────
       try {
         const [{ GLTFLoader }, { DRACOLoader }] = await Promise.all([
           import('three/examples/jsm/loaders/GLTFLoader.js'),
           import('three/examples/jsm/loaders/DRACOLoader.js'),
         ]);
-        if(disposed) return;
+        if (disposed) return;
 
         const draco = new DRACOLoader();
-        draco.setDecoderPath('/draco/');       // served from public/draco/
+        draco.setDecoderPath('/draco/');
         const loader = new GLTFLoader();
         loader.setDRACOLoader(draco);
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const gltf: any = await new Promise((resolve, reject) =>
-          loader.load('/models/ferrari.glb', resolve, undefined, reject)  // served from public/models/
+          loader.load('/models/ferrari.glb', resolve, undefined, reject)
         );
-        if(disposed) return;
+        if (disposed) return;
 
         const model: ThreeNS.Object3D = gltf.scene;
-        carModel = model;
 
-        // Auto-scale and floor-align
-        const box = new THREE.Box3().setFromObject(model);
-        const size = box.getSize(new THREE.Vector3());
-        const s = 3.8 / size.x;
-        model.scale.setScalar(s);
-        box.setFromObject(model);
-        const centre = box.getCenter(new THREE.Vector3());
-        model.position.x -= centre.x;
-        model.position.y -= box.min.y;
-        model.position.z -= centre.z;
+        // Materials
+        const bodyPaint = new THREE.MeshPhysicalMaterial({
+          color: '#1a1a2e', metalness: 0.9, roughness: 0.05,
+          clearcoat: 1.0, clearcoatRoughness: 0.03,
+        });
+        const glassMat = new THREE.MeshPhysicalMaterial({
+          color: '#0a1020', roughness: 0.0, transmission: 0.9,
+          transparent: true, opacity: 0.2,
+        });
+        const detailMat = new THREE.MeshStandardMaterial({ color: '#111118', roughness: 0.5, metalness: 0.2 });
 
-        // Apply materials
         model.traverse((child: ThreeNS.Object3D) => {
           const mesh = child as ThreeNS.Mesh;
           if (!mesh.isMesh) return;
-          mesh.castShadow = true;
-          mesh.receiveShadow = true;
-          const name = mesh.name.toLowerCase();
+          mesh.castShadow = true; mesh.receiveShadow = true;
+          const n = mesh.name.toLowerCase();
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const origMat = mesh.material as any;
-          if (name.includes('glass') || name.includes('window') || origMat?.transparent) {
+          if (n.includes('glass') || n.includes('window') || (mesh.material as any)?.transparent) {
             mesh.material = glassMat;
-          } else if (name.includes('rim') || name.includes('wheel') || name.includes('tire') || name.includes('tyre')) {
-            // keep original chrome rims
-          } else if (name.includes('interior') || name.includes('seat') || name.includes('steer')) {
+          } else if (n.includes('rim') || n.includes('wheel') || n.includes('tire') || n.includes('tyre')) {
+            // keep original
+          } else if (n.includes('interior') || n.includes('seat') || n.includes('steer')) {
             mesh.material = detailMat;
           } else {
             mesh.material = bodyPaint;
           }
         });
 
+        // Sit car on ground (model is at y=0 natively in Three.js example)
+        model.position.set(0, 0, 0);
+        carModel = model;
         scene.add(model);
         draco.dispose();
-      } catch(e) {
-        console.warn('Ferrari model failed to load:', e);
+      } catch (e) {
+        console.error('Ferrari model error:', e);
       }
-
-      // RAF loop
-      let autoRot=0.3, mrY=0,tY=0,mrX=0,tX=0,sweepT=0;
-      let raf: number;
-      const loop = () => {
-        raf=requestAnimationFrame(loop);
-        if(document.hidden||disposed) return;
-        autoRot+=0.0018; sweepT+=0.007;
-        tY=(mouseRef.current.x-0.5)*0.6; tX=(mouseRef.current.y-0.5)*-0.22;
-        mrY+=(tY-mrY)*0.025; mrX+=(tX-mrX)*0.025;
-        if(carModel){
-          carModel.rotation.y=autoRot+mrY;
-          carModel.rotation.x=mrX*0.12;
-          carModel.position.y=Math.sin(autoRot*0.8)*0.04;
-        }
-        key.position.x=-6+mouseRef.current.x*2.5;
-        key.position.z= 5-mouseRef.current.y*1.2;
-        sweep.position.x=5+Math.sin(sweepT)*4;
-        sweep.position.z=2+Math.cos(sweepT*0.6)*2;
-        renderer.render(scene,camera);
-      };
-      loop(); cleanups.push(()=>cancelAnimationFrame(raf));
-
-      const ro=new ResizeObserver(()=>{
-        if(disposed) return;
-        const w=el.offsetWidth,h=el.offsetHeight;
-        camera.aspect=w/h; camera.updateProjectionMatrix(); renderer.setSize(w,h);
-      });
-      ro.observe(el); cleanups.push(()=>ro.disconnect());
     })();
 
-    return ()=>{ disposed=true; cleanups.forEach(fn=>fn()); };
+    return () => { disposed = true; cleanups.forEach(fn => fn()); };
   }, [mouseRef]);
 
-  return <canvas ref={ref} className="absolute inset-0" style={{width:'100%',height:'100%',display:'block'}} />;
+  return <canvas ref={ref} className="absolute inset-0" style={{ width: '100%', height: '100%', display: 'block' }} />;
 }
 
 /* ═══════════════════════════════════════════════
