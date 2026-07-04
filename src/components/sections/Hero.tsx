@@ -269,13 +269,14 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
 
       // ── SCENE ─────────────────────────────────
       const scene = new THREE.Scene();
-      scene.background = new THREE.Color('#08080e');
+      scene.background = new THREE.Color('#030307');
+      scene.fog = new THREE.FogExp2('#030307', 0.034); // depth, atmosphere
 
       const W = el.offsetWidth, H = el.offsetHeight;
-      // Camera from Three.js official ferrari example
       const camera = new THREE.PerspectiveCamera(40, W/H, 0.1, 100);
       camera.position.set(4.25, 1.4, -4.5);
-      camera.lookAt(0, 0.5, 0);
+      // lookAt shifted left → car sits in the right portion of canvas (right panel)
+      camera.lookAt(-1.8, 0.5, 0);
 
       const renderer = new THREE.WebGLRenderer({ canvas: el, antialias: true });
       renderer.setSize(W, H);
@@ -283,7 +284,7 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.0;
+      renderer.toneMappingExposure = 1.5;
       cleanups.push(() => renderer.dispose());
 
       // ── STATIC SCENE OBJECTS ──────────────────
@@ -305,28 +306,41 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
       });
 
       // ── LIGHTS ────────────────────────────────
-      scene.add(new THREE.AmbientLight('#ffffff', 0.5));
+      // Very low ambient so the scene stays deep and moody
+      scene.add(new THREE.AmbientLight('#0a0a18', 0.08));
 
-      const key = new THREE.SpotLight('#fff5e0', 3, 50, 0.4, 0.5);
-      key.position.set(-4, 6, 4);
+      // Primary key — warm studio top-left
+      const key = new THREE.SpotLight('#fff5e0', 9, 60, 0.35, 0.6);
+      key.position.set(-5, 8, 4);
       key.castShadow = true;
-      key.shadow.mapSize.set(1024, 1024);
+      key.shadow.mapSize.set(2048, 2048);
+      key.shadow.bias = -0.0005;
       scene.add(key, key.target);
 
-      const rim = new THREE.SpotLight('#c0d8ff', 2, 40, 0.4, 0.5);
-      rim.position.set(4, 4, -4);
+      // Cool silver rim from rear-right (creates body-line edge)
+      const rim = new THREE.SpotLight('#a0c8ff', 5, 50, 0.35, 0.6);
+      rim.position.set(5, 5, -5);
       scene.add(rim, rim.target);
 
-      const fill = new THREE.PointLight('#d0e0ff', 0.6, 30);
-      fill.position.set(0, 2, 6);
-      scene.add(fill);
+      // Counter-rim from front-left (separates nose from black bg)
+      const counterRim = new THREE.SpotLight('#c8d8ff', 2.5, 50, 0.5, 0.7);
+      counterRim.position.set(-6, 3, -5);
+      scene.add(counterRim, counterRim.target);
 
-      const sweep = new THREE.SpotLight('#ffffff', 1.5, 60, 0.04, 0.9);
-      sweep.position.set(6, 10, 2);
+      // Red brake-glow from behind (simulates tail light spill)
+      const brakeGlow = new THREE.PointLight('#ff1020', 1.2, 8);
+      brakeGlow.position.set(0, 0.4, -3.5);
+      scene.add(brakeGlow);
+
+      // Moving overhead spotlight (controlled in loop)
+      const sweep = new THREE.SpotLight('#f0f4ff', 3.5, 70, 0.06, 0.85);
+      sweep.position.set(6, 12, 2);
       scene.add(sweep, sweep.target);
 
       // ── START RENDERING IMMEDIATELY ───────────
       let carModel: ThreeNS.Object3D | null = null;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let composer: any = null;
       let autoRot = 0.3, mrY = 0, tY = 0, mrX = 0, tX = 0, sweepT = 0;
       let raf: number;
       const loop = () => {
@@ -340,11 +354,13 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
           carModel.rotation.x = mrX * 0.1;
           carModel.position.y = Math.sin(autoRot * 0.8) * 0.04;
         }
-        key.position.x = -4 + mouseRef.current.x * 2;
+        key.position.x = -5 + mouseRef.current.x * 2;
         key.position.z = 4 - mouseRef.current.y;
         sweep.position.x = 5 + Math.sin(sweepT) * 3;
         sweep.position.z = 2 + Math.cos(sweepT * 0.6) * 2;
-        renderer.render(scene, camera);
+        // Subtle brake glow pulse
+        brakeGlow.intensity = 1.0 + Math.sin(sweepT * 0.9) * 0.25;
+        composer ? composer.render() : renderer.render(scene, camera);
       };
       loop();
       cleanups.push(() => cancelAnimationFrame(raf));
@@ -353,6 +369,7 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
         if (disposed) return;
         const w = el.offsetWidth, h = el.offsetHeight;
         camera.aspect = w / h; camera.updateProjectionMatrix(); renderer.setSize(w, h);
+        if (composer) composer.setSize(w, h);
       });
       ro.observe(el);
       cleanups.push(() => ro.disconnect());
@@ -421,6 +438,24 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
         carModel = model;
         scene.add(model);
         draco.dispose();
+
+        // ── BLOOM (loads after model, non-blocking) ──
+        try {
+          const [{ EffectComposer }, { RenderPass }, { UnrealBloomPass }] = await Promise.all([
+            import('three/examples/jsm/postprocessing/EffectComposer.js'),
+            import('three/examples/jsm/postprocessing/RenderPass.js'),
+            import('three/examples/jsm/postprocessing/UnrealBloomPass.js'),
+          ]);
+          if (!disposed) {
+            const cw = el.offsetWidth, ch = el.offsetHeight;
+            const comp = new EffectComposer(renderer);
+            comp.addPass(new RenderPass(scene, camera));
+            // threshold 0.72 → only brightest highlights bloom (clearcoat, lights)
+            const bloom = new UnrealBloomPass(new THREE.Vector2(cw, ch), 0.6, 0.4, 0.72);
+            comp.addPass(bloom);
+            composer = comp;
+          }
+        } catch (e) { console.warn('Bloom unavailable:', e); }
       } catch (e) {
         console.error('Ferrari model error:', e);
       }

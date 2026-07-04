@@ -257,6 +257,177 @@ function PhoneMockup({
   );
 }
 
+/* ─── Future project: placeholder screen ─── */
+
+function FutureScreen() {
+  return (
+    <div className="absolute inset-0" style={{ background: '#06060e', overflow: 'hidden' }}>
+      {/* Dot grid overlay */}
+      <div
+        style={{
+          position: 'absolute', inset: 0,
+          backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.055) 1px, transparent 1px)',
+          backgroundSize: '18px 18px',
+        }}
+      />
+      {/* Pulsing radial glow */}
+      <motion.div
+        animate={{ opacity: [0.22, 0.5, 0.22], scale: [0.8, 1.2, 0.8] }}
+        transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+        style={{
+          position: 'absolute',
+          top: '50%', left: '50%',
+          width: '60%', paddingBottom: '60%',
+          transform: 'translate(-50%, -50%)',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(140,90,255,0.22) 0%, rgba(90,40,180,0.06) 55%, transparent 72%)',
+        }}
+      />
+      {/* Crosshair */}
+      <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}>
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="rgba(255,255,255,0.14)" strokeWidth="1">
+          <line x1="11" y1="2" x2="11" y2="20" />
+          <line x1="2" y1="11" x2="20" y2="11" />
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Future device mockups (no iframe, no idle logo) ─── */
+
+function FutureMonitorMockup() {
+  return (
+    <div className="flex flex-col items-center">
+      <div
+        className="w-full rounded-lg border border-white/[0.07] overflow-hidden"
+        style={{ background: '#151515' }}
+      >
+        <div className="flex items-center gap-1.5 px-3 py-2">
+          {['#ff5f57', '#ffbd2e', '#28c941'].map((c, i) => (
+            <div key={i} className="w-[7px] h-[7px] rounded-full" style={{ background: c, opacity: 0.3 }} />
+          ))}
+        </div>
+        <div className="relative w-full" style={{ aspectRatio: '16 / 10', background: '#000', overflow: 'hidden' }}>
+          <FutureScreen />
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.02) 0%, transparent 50%)' }}
+          />
+        </div>
+      </div>
+      <div style={{ width: '9%', height: '12px', background: '#151515' }} />
+      <div style={{ width: '26%', height: '3px', background: '#151515', borderRadius: '99px', border: '1px solid rgba(255,255,255,0.04)' }} />
+    </div>
+  );
+}
+
+function FuturePhoneMockup() {
+  return (
+    <div
+      className="border border-white/[0.07] overflow-hidden"
+      style={{ background: '#151515', borderRadius: '13%', aspectRatio: '9 / 19.5', padding: '4px' }}
+    >
+      <div className="relative h-full overflow-hidden" style={{ background: '#000', borderRadius: '10%' }}>
+        <div
+          style={{
+            position: 'absolute', top: '4%', left: '50%',
+            transform: 'translateX(-50%)',
+            width: '23%', height: '4.5%',
+            background: '#151515', borderRadius: '99px', zIndex: 10,
+            opacity: 0.5,
+          }}
+        />
+        <FutureScreen />
+      </div>
+    </div>
+  );
+}
+
+/* ─── Future card logo ─── */
+
+function FutureCardLogo() {
+  return (
+    <span
+      style={{
+        fontFamily: "var(--font-cormorant, 'Cormorant', serif)",
+        fontWeight: 400,
+        fontStyle: 'italic',
+        fontSize: '24px',
+        letterSpacing: '0.06em',
+        lineHeight: 1.2,
+        display: 'inline-block',
+        color: 'rgba(255,255,255,0.22)',
+      }}
+    >
+      Your Vision, Next
+    </span>
+  );
+}
+
+/* ─── Future project card ─── */
+
+function FutureProjectCard({ index }: { index: number }) {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 40 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-60px' }}
+      transition={{ duration: 1, delay: index * 0.15, ease: [0.16, 1, 0.3, 1] }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className="flex flex-col gap-7"
+      style={{ opacity: hovered ? 1 : 0.55, transition: 'opacity 0.5s ease' }}
+    >
+      {/* Logo + tag */}
+      <div className="flex flex-col gap-1.5" style={{ minHeight: '64px' }}>
+        <FutureCardLogo />
+        <span className="font-sans text-[10px] tracking-[0.22em] uppercase" style={{ color: 'rgba(255,255,255,0.18)' }}>
+          Future Project
+        </span>
+      </div>
+
+      {/* Devices */}
+      <div className="relative select-none">
+        <div style={{ width: '75%' }}>
+          <FutureMonitorMockup />
+        </div>
+        <div
+          style={{
+            position: 'absolute', right: 0, top: '50%',
+            transform: 'translateY(-50%)', width: '20%',
+          }}
+        >
+          <FuturePhoneMockup />
+        </div>
+      </div>
+
+      {/* CTA — appears on hover */}
+      <div style={{ minHeight: '28px' }}>
+        <AnimatePresence>
+          {hovered && (
+            <motion.a
+              href="mailto:matupoll.com@gmail.com"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 4 }}
+              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              className="inline-flex items-center gap-2.5 font-sans text-[10px] tracking-[0.22em] uppercase text-[#F0EDE8] hover:opacity-50 transition-opacity duration-300"
+            >
+              <span className="border-b border-current pb-px">Let&apos;s Talk</span>
+              <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M1.5 9.5 9.5 1.5M9.5 1.5H3.5M9.5 1.5V7.5" />
+              </svg>
+            </motion.a>
+          )}
+        </AnimatePresence>
+      </div>
+    </motion.div>
+  );
+}
+
 /* ─── Project card ─── */
 
 interface ProjectConfig {
@@ -392,6 +563,8 @@ export default function Portfolio() {
               index={i}
             />
           ))}
+          <FutureProjectCard index={2} />
+          <FutureProjectCard index={3} />
         </div>
       </div>
     </section>
