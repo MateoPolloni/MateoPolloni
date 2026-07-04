@@ -254,28 +254,26 @@ function DettagliLabels() {
 }
 
 /* ═══════════════════════════════════════════════
-   DETTAGLI SCENE — Ferrari GLTF, render-first
+   DETTAGLI SCENE — luxury automotive void
 ═══════════════════════════════════════════════ */
 function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:number;y:number}> }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
-    const el = ref.current; if(!el) return;
+    const el = ref.current; if (!el) return;
     let disposed = false;
-    const cleanups: (()=>void)[] = [];
+    const cleanups: (() => void)[] = [];
 
-    (async()=>{
+    (async () => {
       const THREE = await import('three');
-      if(disposed) return;
+      if (disposed) return;
 
-      // ── SCENE ─────────────────────────────────
+      // ── SCENE: pure dark void ──────────────────
       const scene = new THREE.Scene();
-      scene.background = new THREE.Color('#030307');
-      scene.fog = new THREE.FogExp2('#030307', 0.034); // depth, atmosphere
+      scene.background = new THREE.Color('#000003');
 
       const W = el.offsetWidth, H = el.offsetHeight;
-      const camera = new THREE.PerspectiveCamera(40, W/H, 0.1, 100);
-      camera.position.set(4.25, 1.4, -4.5);
-      // lookAt shifted RIGHT → car sits in the right portion of the Dettagli panel
+      const camera = new THREE.PerspectiveCamera(38, W / H, 0.1, 100);
+      camera.position.set(4.25, 0.95, -4.5);
       camera.lookAt(1.8, 0.5, 0);
 
       const renderer = new THREE.WebGLRenderer({ canvas: el, antialias: true });
@@ -284,79 +282,84 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 0.85;
+      renderer.toneMappingExposure = 0.78;
       cleanups.push(() => renderer.dispose());
 
-      // ── STATIC SCENE OBJECTS ──────────────────
-      // Ground — polished dark stone floor, picks up env map reflections
-      const ground = new THREE.Mesh(
-        new THREE.PlaneGeometry(100, 100),
-        new THREE.MeshPhysicalMaterial({ color: '#050508', roughness: 0.04, metalness: 0.0, envMapIntensity: 0.35 })
-      );
-      ground.rotation.x = -Math.PI / 2;
-      ground.receiveShadow = true;
-      scene.add(ground);
-
-      // Platform rings — subtle gold accent, low emissive
-      const ringMat = new THREE.MeshStandardMaterial({ color: '#8a6c1a', emissive: '#4a3808', emissiveIntensity: 0.3, metalness: 0.85, roughness: 0.25 });
-      [3, 3.8, 4.8].forEach(r => {
-        const ring = new THREE.Mesh(new THREE.TorusGeometry(r, 0.014, 8, 96), ringMat);
-        ring.rotation.x = -Math.PI / 2;
-        scene.add(ring);
+      // ── DUST MOTES ────────────────────────────
+      const N = 160;
+      const dPos = new Float32Array(N * 3);
+      const dSpd = new Float32Array(N);
+      for (let i = 0; i < N; i++) {
+        dPos[i * 3]     = (Math.random() - 0.5) * 14;
+        dPos[i * 3 + 1] = Math.random() * 5;
+        dPos[i * 3 + 2] = (Math.random() - 0.5) * 14;
+        dSpd[i] = 0.00012 + Math.random() * 0.00025;
+      }
+      const dustGeo = new THREE.BufferGeometry();
+      dustGeo.setAttribute('position', new THREE.BufferAttribute(dPos, 3));
+      const dustMat = new THREE.PointsMaterial({
+        color: '#a0aac0', size: 0.016, transparent: true, opacity: 0.25,
+        sizeAttenuation: true, blending: THREE.AdditiveBlending, depthWrite: false,
       });
+      scene.add(new THREE.Points(dustGeo, dustMat));
+      cleanups.push(() => { dustGeo.dispose(); dustMat.dispose(); });
 
-      // ── LIGHTS ────────────────────────────────
-      // Barely-there fill — prevents pure-black shadows without lifting the mood
-      scene.add(new THREE.AmbientLight('#080814', 0.05));
+      // ── BASE LIGHTS (for initial frames before area lights load) ──
+      scene.add(new THREE.AmbientLight('#060612', 0.04));
 
-      // Key — warm soft studio light from upper-left, large penumbra for soft edges
-      const key = new THREE.SpotLight('#ede8d8', 3.5, 60, 0.28, 0.75);
-      key.position.set(-5, 8, 4);
-      key.castShadow = true;
-      key.shadow.mapSize.set(2048, 2048);
-      key.shadow.bias = -0.0004;
-      key.shadow.radius = 3;
-      scene.add(key, key.target);
+      // Shadow-casting spot needed for SSAOPass depth pass
+      const shadowSpot = new THREE.SpotLight('#e8e0d0', 2.0, 25, 0.45, 0.8);
+      shadowSpot.position.set(-3, 8, 3);
+      shadowSpot.castShadow = true;
+      shadowSpot.shadow.mapSize.set(2048, 2048);
+      shadowSpot.shadow.bias = -0.0003;
+      shadowSpot.shadow.radius = 5;
+      scene.add(shadowSpot, shadowSpot.target);
 
-      // Cool rim from rear-right — traces body lines without overpowering
-      const rim = new THREE.SpotLight('#6a8fc8', 2.0, 50, 0.3, 0.7);
-      rim.position.set(5, 4.5, -5);
-      scene.add(rim, rim.target);
-
-      // Subtle counter-rim from front-left — lifts the nose from the background
-      const counterRim = new THREE.SpotLight('#304050', 0.9, 40, 0.45, 0.8);
-      counterRim.position.set(-6, 2.5, -4);
-      scene.add(counterRim, counterRim.target);
-
-      // Brake glow — deep red from behind, barely visible, just warmth
-      const brakeGlow = new THREE.PointLight('#880010', 0.35, 6);
-      brakeGlow.position.set(0, 0.5, -3.2);
-      scene.add(brakeGlow);
-
-      // ── START RENDERING IMMEDIATELY ───────────
+      // ── RAF STATE ─────────────────────────────
       let carModel: ThreeNS.Object3D | null = null;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let composer: any = null;
-      let autoRot = 0.3, mrY = 0, tY = 0, mrX = 0, tX = 0, sweepT = 0;
+      let topBox: ThreeNS.RectAreaLight | null = null;
+      let autoRot = 0.3, mrY = 0, tY = 0, mrX = 0, tX = 0;
       let raf: number;
+      const dustAttr = dustGeo.attributes.position as ThreeNS.BufferAttribute;
+
+      // ── RAF LOOP (starts immediately) ─────────
       const loop = () => {
         raf = requestAnimationFrame(loop);
         if (document.hidden || disposed) return;
-        autoRot += 0.0018; sweepT += 0.007;
-        tY = (mouseRef.current.x - 0.5) * 0.6; tX = (mouseRef.current.y - 0.5) * -0.2;
-        mrY += (tY - mrY) * 0.025; mrX += (tX - mrX) * 0.025;
+        autoRot += 0.0009; // slow, deliberate — premium feel
+        tY = (mouseRef.current.x - 0.5) * 0.28;
+        tX = (mouseRef.current.y - 0.5) * -0.10;
+        mrY += (tY - mrY) * 0.014;
+        mrX += (tX - mrX) * 0.014;
+
         if (carModel) {
           carModel.rotation.y = autoRot + mrY;
-          carModel.rotation.x = -0.07 + mrX * 0.1; // forward tilt: nose-down floating pose
-          carModel.position.y = 0.06 + Math.sin(autoRot * 0.8) * 0.07; // suspended above ground
+          carModel.rotation.x = -0.05 + mrX * 0.08;
+          carModel.position.y = 0.08 + Math.sin(autoRot * 0.60) * 0.065;
         }
-        // Gentle brake glow pulse
-        brakeGlow.intensity = 0.3 + Math.sin(sweepT * 0.7) * 0.08;
+
+        // Drift dust motes upward slowly
+        for (let i = 0; i < N; i++) {
+          const y = dustAttr.getY(i) + dSpd[i];
+          dustAttr.setY(i, y > 5.5 ? 0 : y);
+        }
+        dustAttr.needsUpdate = true;
+
+        // Softbox moves subtly with cursor — shifts reflection highlight across body
+        if (topBox) {
+          topBox.position.x = -1.0 + mouseRef.current.x * 1.4;
+          topBox.lookAt(0, 0, 0);
+        }
+
         composer ? composer.render() : renderer.render(scene, camera);
       };
       loop();
       cleanups.push(() => cancelAnimationFrame(raf));
 
+      // ── RESIZE ────────────────────────────────
       const ro = new ResizeObserver(() => {
         if (disposed) return;
         const w = el.offsetWidth, h = el.offsetHeight;
@@ -366,7 +369,40 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
       ro.observe(el);
       cleanups.push(() => ro.disconnect());
 
-      // ── ENVIRONMENT MAP (async, non-blocking) ─
+      // ── RECT AREA LIGHTS (async) ──────────────
+      // Key technique: large area lights create the long rectangular reflections
+      // characteristic of luxury automotive photography
+      try {
+        const { RectAreaLightUniformsLib } = await import('three/examples/jsm/lights/RectAreaLightUniformsLib.js');
+        if (disposed) return;
+        RectAreaLightUniformsLib.init();
+
+        // Large overhead softbox — warm, wide; creates hood/roof/windshield reflection
+        topBox = new THREE.RectAreaLight('#f8f0e2', 4.5, 14, 5);
+        topBox.position.set(-1, 7, 1);
+        topBox.lookAt(0, 0, 0);
+        scene.add(topBox);
+
+        // Left vertical strip — narrow, tall; creates the long edge highlight on the door
+        const lStrip = new THREE.RectAreaLight('#8898cc', 2.8, 0.45, 6);
+        lStrip.position.set(-5.5, 2, 0);
+        lStrip.lookAt(0, 1, 0);
+        scene.add(lStrip);
+
+        // Right rear strip — cold silver; separates rear silhouette from the void
+        const rStrip = new THREE.RectAreaLight('#5870a0', 2.0, 0.4, 4);
+        rStrip.position.set(4.5, 2, -4.5);
+        rStrip.lookAt(0, 1, 0);
+        scene.add(rStrip);
+
+        // Low front wash — barely warm; lifts nose fascia without a hard shadow
+        const fWash = new THREE.RectAreaLight('#c8b898', 1.0, 3, 1.5);
+        fWash.position.set(-2, 0.8, 5);
+        fWash.lookAt(0, 0.5, 0);
+        scene.add(fWash);
+      } catch (e) { console.warn('RectAreaLight:', e); }
+
+      // ── ENVIRONMENT MAP (async) ───────────────
       try {
         const { RoomEnvironment } = await import('three/examples/jsm/environments/RoomEnvironment.js');
         if (!disposed) {
@@ -376,7 +412,7 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
         }
       } catch (e) { console.warn('RoomEnvironment:', e); }
 
-      // ── LOAD MODEL (async, non-blocking) ──────
+      // ── LOAD MODEL (async) ────────────────────
       try {
         const [{ GLTFLoader }, { DRACOLoader }] = await Promise.all([
           import('three/examples/jsm/loaders/GLTFLoader.js'),
@@ -397,32 +433,29 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
 
         const model: ThreeNS.Object3D = gltf.scene;
 
-        // Materials — PBR automotive lacquer with visible clearcoat reflections
+        // Deep black automotive lacquer — dark base with sharp clearcoat
         const bodyPaint = new THREE.MeshPhysicalMaterial({
-          color: '#08080e',
-          metalness: 0.68,
-          roughness: 0.2,
+          color: '#060608',
+          metalness: 0.82,
+          roughness: 0.12,
           clearcoat: 1.0,
-          clearcoatRoughness: 0.08, // sharp clearcoat streaks from env map
-          envMapIntensity: 0.9,     // environment map gives the long studio reflections
+          clearcoatRoughness: 0.04, // sharp clearcoat = long area-light streaks on body
+          envMapIntensity: 1.0,
           specularIntensity: 1.0,
-          specularColor: new THREE.Color('#d0d8f0'), // cool-tinted specular highlights
+          specularColor: new THREE.Color('#ccd4f0'),
         });
         const glassMat = new THREE.MeshPhysicalMaterial({
-          color: '#0a1422', roughness: 0.04, transmission: 0.88,
-          transparent: true, opacity: 0.35, envMapIntensity: 0.5,
-          ior: 1.5,
+          color: '#080e18', roughness: 0.04, transmission: 0.9,
+          transparent: true, opacity: 0.3, ior: 1.52, envMapIntensity: 0.6,
         });
         const detailMat = new THREE.MeshStandardMaterial({
-          color: '#0c0c14', roughness: 0.55, metalness: 0.18,
+          color: '#0c0c12', roughness: 0.5, metalness: 0.2,
         });
-        // Machined aluminum for rims
         const rimMat = new THREE.MeshPhysicalMaterial({
-          color: '#1a1a24', metalness: 0.95, roughness: 0.18, envMapIntensity: 0.9,
+          color: '#181820', metalness: 0.95, roughness: 0.15, envMapIntensity: 1.0,
         });
-        // Rubber for tires
         const tireMat = new THREE.MeshStandardMaterial({
-          color: '#0e0e0e', roughness: 0.88, metalness: 0.0,
+          color: '#0c0c0c', roughness: 0.9, metalness: 0.0,
         });
 
         model.traverse((child: ThreeNS.Object3D) => {
@@ -444,13 +477,12 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
           }
         });
 
-        // Sit car on ground (model is at y=0 natively in Three.js example)
-        model.position.set(0, 0, 0);
+        model.position.set(0, 0.08, 0); // initial float height
         carModel = model;
         scene.add(model);
         draco.dispose();
 
-        // ── POST-PROCESSING ────────────────────────
+        // ── POST-PROCESSING ──────────────────────
         try {
           const [
             { EffectComposer }, { RenderPass }, { SSAOPass },
@@ -466,19 +498,18 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
             const cw = el.offsetWidth, ch = el.offsetHeight;
             const comp = new EffectComposer(renderer);
             comp.addPass(new RenderPass(scene, camera));
-            // SSAO — soft contact shadows under car body, wheel arches, panel gaps
+            // SSAO — panel gaps, wheel arches, undercarriage contact shadows
             const ssao = new SSAOPass(scene, camera, cw, ch);
             ssao.kernelRadius = 16;
             ssao.minDistance = 0.002;
             ssao.maxDistance = 0.08;
             comp.addPass(ssao);
             // Bloom — barely perceptible, only clearcoat specular hot-spots
-            comp.addPass(new UnrealBloomPass(new THREE.Vector2(cw, ch), 0.15, 0.5, 0.92));
-            // OutputPass — correct color space / tone mapping to final display
+            comp.addPass(new UnrealBloomPass(new THREE.Vector2(cw, ch), 0.14, 0.5, 0.90));
             comp.addPass(new OutputPass());
             composer = comp;
           }
-        } catch (e) { console.warn('Post-processing unavailable:', e); }
+        } catch (e) { console.warn('Post-processing:', e); }
       } catch (e) {
         console.error('Ferrari model error:', e);
       }
