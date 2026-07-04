@@ -275,8 +275,8 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
       const W = el.offsetWidth, H = el.offsetHeight;
       const camera = new THREE.PerspectiveCamera(40, W/H, 0.1, 100);
       camera.position.set(4.25, 1.4, -4.5);
-      // lookAt shifted left → car sits in the right portion of canvas (right panel)
-      camera.lookAt(-1.8, 0.5, 0);
+      // lookAt shifted RIGHT → car sits in the right portion of the Dettagli panel
+      camera.lookAt(1.8, 0.5, 0);
 
       const renderer = new THREE.WebGLRenderer({ canvas: el, antialias: true });
       renderer.setSize(W, H);
@@ -284,21 +284,21 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.5;
+      renderer.toneMappingExposure = 0.85;
       cleanups.push(() => renderer.dispose());
 
       // ── STATIC SCENE OBJECTS ──────────────────
-      // Ground
+      // Ground — slightly reflective but not a mirror
       const ground = new THREE.Mesh(
         new THREE.PlaneGeometry(100, 100),
-        new THREE.MeshStandardMaterial({ color: '#030308', roughness: 0.02, metalness: 0.98 })
+        new THREE.MeshStandardMaterial({ color: '#020205', roughness: 0.15, metalness: 0.8 })
       );
       ground.rotation.x = -Math.PI / 2;
       ground.receiveShadow = true;
       scene.add(ground);
 
-      // Platform rings
-      const ringMat = new THREE.MeshStandardMaterial({ color: '#c09a32', emissive: '#7a5f10', emissiveIntensity: 0.7, metalness: 0.9, roughness: 0.1 });
+      // Platform rings — subtle gold accent, low emissive
+      const ringMat = new THREE.MeshStandardMaterial({ color: '#8a6c1a', emissive: '#4a3808', emissiveIntensity: 0.3, metalness: 0.85, roughness: 0.25 });
       [3, 3.8, 4.8].forEach(r => {
         const ring = new THREE.Mesh(new THREE.TorusGeometry(r, 0.014, 8, 96), ringMat);
         ring.rotation.x = -Math.PI / 2;
@@ -306,36 +306,32 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
       });
 
       // ── LIGHTS ────────────────────────────────
-      // Very low ambient so the scene stays deep and moody
-      scene.add(new THREE.AmbientLight('#0a0a18', 0.08));
+      // Barely-there fill — prevents pure-black shadows without lifting the mood
+      scene.add(new THREE.AmbientLight('#080814', 0.05));
 
-      // Primary key — warm studio top-left
-      const key = new THREE.SpotLight('#fff5e0', 9, 60, 0.35, 0.6);
+      // Key — warm soft studio light from upper-left, large penumbra for soft edges
+      const key = new THREE.SpotLight('#ede8d8', 3.5, 60, 0.28, 0.75);
       key.position.set(-5, 8, 4);
       key.castShadow = true;
       key.shadow.mapSize.set(2048, 2048);
-      key.shadow.bias = -0.0005;
+      key.shadow.bias = -0.0004;
+      key.shadow.radius = 3;
       scene.add(key, key.target);
 
-      // Cool silver rim from rear-right (creates body-line edge)
-      const rim = new THREE.SpotLight('#a0c8ff', 5, 50, 0.35, 0.6);
-      rim.position.set(5, 5, -5);
+      // Cool rim from rear-right — traces body lines without overpowering
+      const rim = new THREE.SpotLight('#6a8fc8', 2.0, 50, 0.3, 0.7);
+      rim.position.set(5, 4.5, -5);
       scene.add(rim, rim.target);
 
-      // Counter-rim from front-left (separates nose from black bg)
-      const counterRim = new THREE.SpotLight('#c8d8ff', 2.5, 50, 0.5, 0.7);
-      counterRim.position.set(-6, 3, -5);
+      // Subtle counter-rim from front-left — lifts the nose from the background
+      const counterRim = new THREE.SpotLight('#304050', 0.9, 40, 0.45, 0.8);
+      counterRim.position.set(-6, 2.5, -4);
       scene.add(counterRim, counterRim.target);
 
-      // Red brake-glow from behind (simulates tail light spill)
-      const brakeGlow = new THREE.PointLight('#ff1020', 1.2, 8);
-      brakeGlow.position.set(0, 0.4, -3.5);
+      // Brake glow — deep red from behind, barely visible, just warmth
+      const brakeGlow = new THREE.PointLight('#880010', 0.35, 6);
+      brakeGlow.position.set(0, 0.5, -3.2);
       scene.add(brakeGlow);
-
-      // Moving overhead spotlight (controlled in loop)
-      const sweep = new THREE.SpotLight('#f0f4ff', 3.5, 70, 0.06, 0.85);
-      sweep.position.set(6, 12, 2);
-      scene.add(sweep, sweep.target);
 
       // ── START RENDERING IMMEDIATELY ───────────
       let carModel: ThreeNS.Object3D | null = null;
@@ -354,12 +350,8 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
           carModel.rotation.x = mrX * 0.1;
           carModel.position.y = Math.sin(autoRot * 0.8) * 0.04;
         }
-        key.position.x = -5 + mouseRef.current.x * 2;
-        key.position.z = 4 - mouseRef.current.y;
-        sweep.position.x = 5 + Math.sin(sweepT) * 3;
-        sweep.position.z = 2 + Math.cos(sweepT * 0.6) * 2;
-        // Subtle brake glow pulse
-        brakeGlow.intensity = 1.0 + Math.sin(sweepT * 0.9) * 0.25;
+        // Gentle brake glow pulse
+        brakeGlow.intensity = 0.3 + Math.sin(sweepT * 0.7) * 0.08;
         composer ? composer.render() : renderer.render(scene, camera);
       };
       loop();
@@ -405,16 +397,22 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
 
         const model: ThreeNS.Object3D = gltf.scene;
 
-        // Materials
+        // Materials — tuned for a believable automotive lacquer (not chrome)
         const bodyPaint = new THREE.MeshPhysicalMaterial({
-          color: '#1a1a2e', metalness: 0.9, roughness: 0.05,
-          clearcoat: 1.0, clearcoatRoughness: 0.03,
+          color: '#090910',
+          metalness: 0.72,
+          roughness: 0.22,   // satin lacquer, not a mirror
+          clearcoat: 1.0,
+          clearcoatRoughness: 0.18, // matte clearcoat film
+          envMapIntensity: 0.55,    // subdued reflections
         });
         const glassMat = new THREE.MeshPhysicalMaterial({
-          color: '#0a1020', roughness: 0.0, transmission: 0.9,
-          transparent: true, opacity: 0.2,
+          color: '#0a1422', roughness: 0.05, transmission: 0.88,
+          transparent: true, opacity: 0.35, envMapIntensity: 0.3,
         });
-        const detailMat = new THREE.MeshStandardMaterial({ color: '#111118', roughness: 0.5, metalness: 0.2 });
+        const detailMat = new THREE.MeshStandardMaterial({
+          color: '#0d0d16', roughness: 0.6, metalness: 0.15,
+        });
 
         model.traverse((child: ThreeNS.Object3D) => {
           const mesh = child as ThreeNS.Mesh;
@@ -450,8 +448,8 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
             const cw = el.offsetWidth, ch = el.offsetHeight;
             const comp = new EffectComposer(renderer);
             comp.addPass(new RenderPass(scene, camera));
-            // threshold 0.72 → only brightest highlights bloom (clearcoat, lights)
-            const bloom = new UnrealBloomPass(new THREE.Vector2(cw, ch), 0.6, 0.4, 0.72);
+            // Very subtle bloom — only absolute brightest specular hot-spots
+            const bloom = new UnrealBloomPass(new THREE.Vector2(cw, ch), 0.18, 0.5, 0.92);
             comp.addPass(bloom);
             composer = comp;
           }
