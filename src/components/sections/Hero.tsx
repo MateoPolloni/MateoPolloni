@@ -282,7 +282,7 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 0.78;
+      renderer.toneMappingExposure = 0.68;
       cleanups.push(() => renderer.dispose());
 
       // ── DUST MOTES ────────────────────────────
@@ -378,13 +378,13 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
         RectAreaLightUniformsLib.init();
 
         // Large overhead softbox — warm, wide; creates hood/roof/windshield reflection
-        topBox = new THREE.RectAreaLight('#f8f0e2', 4.5, 14, 5);
+        topBox = new THREE.RectAreaLight('#f8f0e2', 3.2, 14, 5);
         topBox.position.set(-1, 7, 1);
         topBox.lookAt(0, 0, 0);
         scene.add(topBox);
 
         // Left vertical strip — narrow, tall; creates the long edge highlight on the door
-        const lStrip = new THREE.RectAreaLight('#8898cc', 2.8, 0.45, 6);
+        const lStrip = new THREE.RectAreaLight('#8898cc', 2.2, 0.45, 6);
         lStrip.position.set(-5.5, 2, 0);
         lStrip.lookAt(0, 1, 0);
         scene.add(lStrip);
@@ -485,27 +485,30 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
         // ── POST-PROCESSING ──────────────────────
         try {
           const [
-            { EffectComposer }, { RenderPass }, { SSAOPass },
-            { UnrealBloomPass }, { OutputPass },
+            { EffectComposer }, { RenderPass },
+            { UnrealBloomPass }, { SMAAPass }, { OutputPass },
           ] = await Promise.all([
             import('three/examples/jsm/postprocessing/EffectComposer.js'),
             import('three/examples/jsm/postprocessing/RenderPass.js'),
-            import('three/examples/jsm/postprocessing/SSAOPass.js'),
             import('three/examples/jsm/postprocessing/UnrealBloomPass.js'),
+            import('three/examples/jsm/postprocessing/SMAAPass.js'),
             import('three/examples/jsm/postprocessing/OutputPass.js'),
           ]);
           if (!disposed) {
             const cw = el.offsetWidth, ch = el.offsetHeight;
-            const comp = new EffectComposer(renderer);
+            // MSAA render target — EffectComposer normally uses a non-MSAA buffer,
+            // which discards the renderer's antialias entirely. Passing a target with
+            // samples: 8 re-enables 8× MSAA inside the postprocessing pipeline.
+            const msaaTarget = new THREE.WebGLRenderTarget(cw, ch, {
+              samples: 8,
+              type: THREE.HalfFloatType,
+            });
+            const comp = new EffectComposer(renderer, msaaTarget);
             comp.addPass(new RenderPass(scene, camera));
-            // SSAO — panel gaps, wheel arches, undercarriage contact shadows
-            const ssao = new SSAOPass(scene, camera, cw, ch);
-            ssao.kernelRadius = 16;
-            ssao.minDistance = 0.002;
-            ssao.maxDistance = 0.08;
-            comp.addPass(ssao);
             // Bloom — barely perceptible, only clearcoat specular hot-spots
-            comp.addPass(new UnrealBloomPass(new THREE.Vector2(cw, ch), 0.14, 0.5, 0.90));
+            comp.addPass(new UnrealBloomPass(new THREE.Vector2(cw, ch), 0.12, 0.5, 0.90));
+            // SMAA — resolves sub-pixel edge residuals that MSAA can't catch
+            comp.addPass(new SMAAPass());
             comp.addPass(new OutputPass());
             composer = comp;
           }
