@@ -288,10 +288,10 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
       cleanups.push(() => renderer.dispose());
 
       // ── STATIC SCENE OBJECTS ──────────────────
-      // Ground — slightly reflective but not a mirror
+      // Ground — polished dark stone floor, picks up env map reflections
       const ground = new THREE.Mesh(
         new THREE.PlaneGeometry(100, 100),
-        new THREE.MeshStandardMaterial({ color: '#020205', roughness: 0.15, metalness: 0.8 })
+        new THREE.MeshPhysicalMaterial({ color: '#050508', roughness: 0.04, metalness: 0.0, envMapIntensity: 0.35 })
       );
       ground.rotation.x = -Math.PI / 2;
       ground.receiveShadow = true;
@@ -347,8 +347,8 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
         mrY += (tY - mrY) * 0.025; mrX += (tX - mrX) * 0.025;
         if (carModel) {
           carModel.rotation.y = autoRot + mrY;
-          carModel.rotation.x = mrX * 0.1;
-          carModel.position.y = Math.sin(autoRot * 0.8) * 0.04;
+          carModel.rotation.x = -0.07 + mrX * 0.1; // forward tilt: nose-down floating pose
+          carModel.position.y = 0.06 + Math.sin(autoRot * 0.8) * 0.07; // suspended above ground
         }
         // Gentle brake glow pulse
         brakeGlow.intensity = 0.3 + Math.sin(sweepT * 0.7) * 0.08;
@@ -397,21 +397,32 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
 
         const model: ThreeNS.Object3D = gltf.scene;
 
-        // Materials — tuned for a believable automotive lacquer (not chrome)
+        // Materials — PBR automotive lacquer with visible clearcoat reflections
         const bodyPaint = new THREE.MeshPhysicalMaterial({
-          color: '#090910',
-          metalness: 0.72,
-          roughness: 0.22,   // satin lacquer, not a mirror
+          color: '#08080e',
+          metalness: 0.68,
+          roughness: 0.2,
           clearcoat: 1.0,
-          clearcoatRoughness: 0.18, // matte clearcoat film
-          envMapIntensity: 0.55,    // subdued reflections
+          clearcoatRoughness: 0.08, // sharp clearcoat streaks from env map
+          envMapIntensity: 0.9,     // environment map gives the long studio reflections
+          specularIntensity: 1.0,
+          specularColor: new THREE.Color('#d0d8f0'), // cool-tinted specular highlights
         });
         const glassMat = new THREE.MeshPhysicalMaterial({
-          color: '#0a1422', roughness: 0.05, transmission: 0.88,
-          transparent: true, opacity: 0.35, envMapIntensity: 0.3,
+          color: '#0a1422', roughness: 0.04, transmission: 0.88,
+          transparent: true, opacity: 0.35, envMapIntensity: 0.5,
+          ior: 1.5,
         });
         const detailMat = new THREE.MeshStandardMaterial({
-          color: '#0d0d16', roughness: 0.6, metalness: 0.15,
+          color: '#0c0c14', roughness: 0.55, metalness: 0.18,
+        });
+        // Machined aluminum for rims
+        const rimMat = new THREE.MeshPhysicalMaterial({
+          color: '#1a1a24', metalness: 0.95, roughness: 0.18, envMapIntensity: 0.9,
+        });
+        // Rubber for tires
+        const tireMat = new THREE.MeshStandardMaterial({
+          color: '#0e0e0e', roughness: 0.88, metalness: 0.0,
         });
 
         model.traverse((child: ThreeNS.Object3D) => {
@@ -422,8 +433,10 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           if (n.includes('glass') || n.includes('window') || (mesh.material as any)?.transparent) {
             mesh.material = glassMat;
-          } else if (n.includes('rim') || n.includes('wheel') || n.includes('tire') || n.includes('tyre')) {
-            // keep original
+          } else if (n.includes('tire') || n.includes('tyre')) {
+            mesh.material = tireMat;
+          } else if (n.includes('rim') || n.includes('wheel')) {
+            mesh.material = rimMat;
           } else if (n.includes('interior') || n.includes('seat') || n.includes('steer')) {
             mesh.material = detailMat;
           } else {
@@ -437,23 +450,35 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
         scene.add(model);
         draco.dispose();
 
-        // ── BLOOM (loads after model, non-blocking) ──
+        // ── POST-PROCESSING ────────────────────────
         try {
-          const [{ EffectComposer }, { RenderPass }, { UnrealBloomPass }] = await Promise.all([
+          const [
+            { EffectComposer }, { RenderPass }, { SSAOPass },
+            { UnrealBloomPass }, { OutputPass },
+          ] = await Promise.all([
             import('three/examples/jsm/postprocessing/EffectComposer.js'),
             import('three/examples/jsm/postprocessing/RenderPass.js'),
+            import('three/examples/jsm/postprocessing/SSAOPass.js'),
             import('three/examples/jsm/postprocessing/UnrealBloomPass.js'),
+            import('three/examples/jsm/postprocessing/OutputPass.js'),
           ]);
           if (!disposed) {
             const cw = el.offsetWidth, ch = el.offsetHeight;
             const comp = new EffectComposer(renderer);
             comp.addPass(new RenderPass(scene, camera));
-            // Very subtle bloom — only absolute brightest specular hot-spots
-            const bloom = new UnrealBloomPass(new THREE.Vector2(cw, ch), 0.18, 0.5, 0.92);
-            comp.addPass(bloom);
+            // SSAO — soft contact shadows under car body, wheel arches, panel gaps
+            const ssao = new SSAOPass(scene, camera, cw, ch);
+            ssao.kernelRadius = 16;
+            ssao.minDistance = 0.002;
+            ssao.maxDistance = 0.08;
+            comp.addPass(ssao);
+            // Bloom — barely perceptible, only clearcoat specular hot-spots
+            comp.addPass(new UnrealBloomPass(new THREE.Vector2(cw, ch), 0.15, 0.5, 0.92));
+            // OutputPass — correct color space / tone mapping to final display
+            comp.addPass(new OutputPass());
             composer = comp;
           }
-        } catch (e) { console.warn('Bloom unavailable:', e); }
+        } catch (e) { console.warn('Post-processing unavailable:', e); }
       } catch (e) {
         console.error('Ferrari model error:', e);
       }
