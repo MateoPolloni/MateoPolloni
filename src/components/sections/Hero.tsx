@@ -288,16 +288,19 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 0.65;
+      renderer.toneMappingExposure = 0.72;
       cleanups.push(() => renderer.dispose());
 
       // ── LIGHT STREAKS (suggest studio depth) ──
       const mkStreak = (x: number, y: number, z: number, rz: number, op: number) => {
-        scene.add(Object.assign(new THREE.Mesh(
+        const m = new THREE.Mesh(
           new THREE.PlaneGeometry(0.02, 10),
           new THREE.MeshBasicMaterial({ color: '#c8d4f0', transparent: true, opacity: op,
             blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }),
-        ), { position: new THREE.Vector3(x, y, z), rotation: new THREE.Euler(0, 0, rz) }));
+        );
+        m.position.set(x, y, z);
+        m.rotation.z = rz;
+        scene.add(m);
       };
       mkStreak(-4, 5, 1.5, -0.65, 0.022);
       mkStreak(3, 5.5, -2.5, 0.5, 0.014);
@@ -427,22 +430,22 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
         if (disposed) return;
         RectAreaLightUniformsLib.init();
 
-        topBox = new THREE.RectAreaLight('#f8f0e2', 2.8, 14, 5);
+        topBox = new THREE.RectAreaLight('#f8f0e2', 3.2, 14, 5);
         topBox.position.set(-1, 7, 1);
         topBox.lookAt(0, 0, 0);
         scene.add(topBox);
 
-        const lStrip = new THREE.RectAreaLight('#8898cc', 1.9, 0.45, 6);
+        const lStrip = new THREE.RectAreaLight('#8898cc', 2.0, 0.45, 6);
         lStrip.position.set(-5.5, 2, 0);
         lStrip.lookAt(0, 1, 0);
         scene.add(lStrip);
 
-        const rStrip = new THREE.RectAreaLight('#5870a0', 1.6, 0.4, 4);
+        const rStrip = new THREE.RectAreaLight('#5870a0', 1.8, 0.4, 4);
         rStrip.position.set(4.5, 2, -4.5);
         rStrip.lookAt(0, 1, 0);
         scene.add(rStrip);
 
-        const fWash = new THREE.RectAreaLight('#c8b898', 0.8, 3, 1.5);
+        const fWash = new THREE.RectAreaLight('#c8b898', 0.9, 3, 1.5);
         fWash.position.set(-2, 0.8, 5);
         fWash.lookAt(0, 0.5, 0);
         scene.add(fWash);
@@ -484,9 +487,9 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
           metalness: 0.82,
           roughness: 0.12,
           clearcoat: 1.0,
-          clearcoatRoughness: 0.04,
-          envMapIntensity: 0.65, // reduced — prevents reflections washing out the black
-          specularIntensity: 0.9,
+          clearcoatRoughness: 0.06, // slightly softer than 0.04 — less harsh specular hotspots
+          envMapIntensity: 0.85,   // black cars need reflections to be visible at all
+          specularIntensity: 0.85,
           specularColor: new THREE.Color('#ccd4f0'),
         });
         const glassMat = new THREE.MeshPhysicalMaterial({
@@ -613,10 +616,10 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
     <div className="absolute inset-0">
       <canvas
         ref={canvasRef}
-        style={{ width: '100%', height: '100%', display: 'block', cursor: 'grab', touchAction: 'none' }}
+        style={{ width: '100%', height: '100%', display: 'block', cursor: 'grab', touchAction: 'none', pointerEvents: 'auto' }}
       />
-      {/* Rotation control */}
-      <div className="absolute bottom-6 left-0 right-0 flex flex-col items-center gap-2.5 select-none pointer-events-none">
+      {/* Rotation control — positioned below the car, above the bottom label bar */}
+      <div className="absolute left-0 right-0 flex flex-col items-center gap-2.5 select-none pointer-events-none" style={{ bottom: '6.5rem' }}>
         <span style={{ fontSize: '7px', letterSpacing: '0.5em', color: 'rgba(255,255,255,0.18)', textTransform: 'uppercase' }}>
           Rotate
         </span>
