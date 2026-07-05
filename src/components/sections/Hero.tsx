@@ -288,7 +288,7 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 0.72;
+      renderer.toneMappingExposure = 0.66;
       cleanups.push(() => renderer.dispose());
 
       // ── LIGHT PEDESTAL ───────────────────────
@@ -370,7 +370,7 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
 
       // ── BASE LIGHTS ───────────────────────────
       scene.add(new THREE.AmbientLight('#060612', 0.04));
-      const shadowSpot = new THREE.SpotLight('#e8e0d0', 1.8, 25, 0.45, 0.8);
+      const shadowSpot = new THREE.SpotLight('#e8e0d0', 1.4, 25, 0.45, 0.8);
       shadowSpot.position.set(-3, 8, 3);
       shadowSpot.castShadow = true;
       shadowSpot.shadow.mapSize.set(2048, 2048);
@@ -501,12 +501,12 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
         // ── RECT AREA LIGHTS ──────────────────────
         RectAreaLightUniformsLib.init();
 
-        topBox = new THREE.RectAreaLight('#f8f0e2', 3.2, 14, 5);
+        topBox = new THREE.RectAreaLight('#f8f0e2', 2.4, 14, 5);
         topBox.position.set(-1, 7, 1);
         topBox.lookAt(0, 0, 0);
         scene.add(topBox);
 
-        const lStrip = new THREE.RectAreaLight('#8898cc', 2.0, 0.45, 6);
+        const lStrip = new THREE.RectAreaLight('#8898cc', 1.5, 0.45, 6);
         lStrip.position.set(-5.5, 2, 0);
         lStrip.lookAt(0, 1, 0);
         scene.add(lStrip);
@@ -554,9 +554,9 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
           metalness: 0.82,
           roughness: 0.12,
           clearcoat: 1.0,
-          clearcoatRoughness: 0.08, // softer clearcoat — controlled, not blinding
-          envMapIntensity: 0.72,
-          specularIntensity: 0.80,
+          clearcoatRoughness: 0.16,
+          envMapIntensity: 0.52,
+          specularIntensity: 0.58,
           specularColor: new THREE.Color('#ccd4f0'),
         });
         const glassMat = new THREE.MeshPhysicalMaterial({
