@@ -726,6 +726,7 @@ export default function Hero() {
   const leftClip  = useTransform(divider,v=>`polygon(0 0, ${v}% 0, ${v}% 100%, 0 100%)`);
   const rightClip = useTransform(divider,v=>`polygon(${v}% 0, 100% 0, 100% 100%, ${v}% 100%)`);
   const divPos    = useTransform(divider,v=>`${v}%`);
+  const subOpacityDettagli = useTransform(divider,[43,57],[1,0]);
   const textX = useTransform(mx,[0,1],[7,-7]);
   const textY = useTransform(my,[0,1],[3.5,-3.5]);
 
@@ -796,9 +797,16 @@ export default function Hero() {
               <>Diseño sitios web<br/>que{' '}<em style={{fontFamily:'var(--font-cormorant)',fontStyle:'italic',fontWeight:300,letterSpacing:'0.01em'}}>transmiten</em>{' '}algo.</>
             )}
           </h1>
-          <p style={{margin:'1.4rem auto 0',fontFamily:'var(--font-sans)',fontSize:'clamp(12px, 1.05vw, 15px)',lineHeight:1.75,letterSpacing:'0.01em',color:'#60608a',maxWidth:'360px'}}>
-            {t.hero.sub}
-          </p>
+          <div style={{position:'relative',margin:'1.4rem auto 0',fontFamily:'var(--font-sans)',fontSize:'clamp(12px, 1.05vw, 15px)',lineHeight:1.75,letterSpacing:'0.01em',maxWidth:'360px'}}>
+            {/* SoundBuy identity — cool purple, always the base layer */}
+            <span style={{display:'block',background:'linear-gradient(135deg,#7068a8 0%,#a060d8 100%)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>
+              {t.hero.sub}
+            </span>
+            {/* Dettagli identity — warm ivory to aged gold, fades in as right side dominates */}
+            <motion.span style={{display:'block',position:'absolute',top:0,left:0,right:0,opacity:subOpacityDettagli,background:'linear-gradient(135deg,#f0ece4 0%,#e0ceaa 45%,#c8a050 100%)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>
+              {t.hero.sub}
+            </motion.span>
+          </div>
         </motion.div>
       </div>
 
