@@ -291,6 +291,17 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
       renderer.toneMappingExposure = 0.72;
       cleanups.push(() => renderer.dispose());
 
+      // ── SHOWROOM FLOOR ────────────────────────
+      // Glossy epoxy floor — reflects area lights like a premium detailing studio
+      const floorMat = new THREE.MeshPhysicalMaterial({
+        color: '#030310', metalness: 0.92, roughness: 0.06, envMapIntensity: 0.5,
+      });
+      const floorMesh = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), floorMat);
+      floorMesh.rotation.x = -Math.PI / 2;
+      floorMesh.position.y = 0.0;
+      floorMesh.receiveShadow = true;
+      scene.add(floorMesh);
+
       // ── LIGHT STREAKS (suggest studio depth) ──
       const mkStreak = (x: number, y: number, z: number, rz: number, op: number) => {
         const m = new THREE.Mesh(
@@ -424,10 +435,32 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
       ro.observe(el);
       cleanups.push(() => ro.disconnect());
 
-      // ── RECT AREA LIGHTS (async) ──────────────
+      // ── ALL HEAVY MODULES — loaded in parallel ─
       try {
-        const { RectAreaLightUniformsLib } = await import('three/examples/jsm/lights/RectAreaLightUniformsLib.js');
+        const [
+          { RectAreaLightUniformsLib },
+          { RoomEnvironment },
+          { GLTFLoader },
+          { DRACOLoader },
+          { EffectComposer: EC },
+          { RenderPass: RP },
+          { UnrealBloomPass: UBP },
+          { SMAAPass: SP },
+          { OutputPass: OP },
+        ] = await Promise.all([
+          import('three/examples/jsm/lights/RectAreaLightUniformsLib.js'),
+          import('three/examples/jsm/environments/RoomEnvironment.js'),
+          import('three/examples/jsm/loaders/GLTFLoader.js'),
+          import('three/examples/jsm/loaders/DRACOLoader.js'),
+          import('three/examples/jsm/postprocessing/EffectComposer.js'),
+          import('three/examples/jsm/postprocessing/RenderPass.js'),
+          import('three/examples/jsm/postprocessing/UnrealBloomPass.js'),
+          import('three/examples/jsm/postprocessing/SMAAPass.js'),
+          import('three/examples/jsm/postprocessing/OutputPass.js'),
+        ]);
         if (disposed) return;
+
+        // ── RECT AREA LIGHTS ──────────────────────
         RectAreaLightUniformsLib.init();
 
         topBox = new THREE.RectAreaLight('#f8f0e2', 3.2, 14, 5);
@@ -449,30 +482,26 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
         fWash.position.set(-2, 0.8, 5);
         fWash.lookAt(0, 0.5, 0);
         scene.add(fWash);
-      } catch (e) { console.warn('RectAreaLight:', e); }
 
-      // ── ENVIRONMENT MAP (async) ───────────────
-      try {
-        const { RoomEnvironment } = await import('three/examples/jsm/environments/RoomEnvironment.js');
-        if (!disposed) {
-          const pmrem = new THREE.PMREMGenerator(renderer);
-          scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-          pmrem.dispose();
-        }
-      } catch (e) { console.warn('RoomEnvironment:', e); }
+        // Floor kicker — grazes the underside of the car, separates it from the floor
+        const kicker = new THREE.RectAreaLight('#5870b8', 0.3, 10, 0.4);
+        kicker.position.set(0, 0.02, 0);
+        kicker.lookAt(0, 3, 0);
+        scene.add(kicker);
 
-      // ── LOAD MODEL (async) ────────────────────
-      try {
-        const [{ GLTFLoader }, { DRACOLoader }] = await Promise.all([
-          import('three/examples/jsm/loaders/GLTFLoader.js'),
-          import('three/examples/jsm/loaders/DRACOLoader.js'),
-        ]);
-        if (disposed) return;
+        // ── ENVIRONMENT MAP ───────────────────────
+        const pmrem = new THREE.PMREMGenerator(renderer);
+        scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+        pmrem.dispose();
 
+        // ── LOAD MODEL ────────────────────────────
         const draco = new DRACOLoader();
         draco.setDecoderPath('/draco/');
+        draco.preload();
         const loader = new GLTFLoader();
         loader.setDRACOLoader(draco);
+
+        if (disposed) return;
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const gltf: any = await new Promise((resolve, reject) =>
@@ -487,9 +516,9 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
           metalness: 0.82,
           roughness: 0.12,
           clearcoat: 1.0,
-          clearcoatRoughness: 0.06, // slightly softer than 0.04 — less harsh specular hotspots
-          envMapIntensity: 0.85,   // black cars need reflections to be visible at all
-          specularIntensity: 0.85,
+          clearcoatRoughness: 0.08, // softer clearcoat — controlled, not blinding
+          envMapIntensity: 0.72,
+          specularIntensity: 0.80,
           specularColor: new THREE.Color('#ccd4f0'),
         });
         const glassMat = new THREE.MeshPhysicalMaterial({
@@ -547,48 +576,24 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
         model.position.set(0, 0.08, 0);
         carModel = model;
         scene.add(model);
-
-        // Tail light halo — red point glow at rear
-        const tailGlow = new THREE.PointLight('#ff1800', 1.0, 3.5);
-        tailGlow.position.set(0, 0.45, -2.1);
-        scene.add(tailGlow);
-
-        // Headlight halo — subtle cool-white at front
-        const headGlow = new THREE.PointLight('#c8dcff', 0.45, 2.8);
-        headGlow.position.set(0, 0.5, 2.3);
-        scene.add(headGlow);
-
         draco.dispose();
 
         // ── POST-PROCESSING ──────────────────────
-        try {
-          const [
-            { EffectComposer }, { RenderPass },
-            { UnrealBloomPass }, { SMAAPass }, { OutputPass },
-          ] = await Promise.all([
-            import('three/examples/jsm/postprocessing/EffectComposer.js'),
-            import('three/examples/jsm/postprocessing/RenderPass.js'),
-            import('three/examples/jsm/postprocessing/UnrealBloomPass.js'),
-            import('three/examples/jsm/postprocessing/SMAAPass.js'),
-            import('three/examples/jsm/postprocessing/OutputPass.js'),
-          ]);
-          if (!disposed) {
-            const cw = el.offsetWidth, ch = el.offsetHeight;
-            const msaaTarget = new THREE.WebGLRenderTarget(cw, ch, {
-              samples: 8,
-              type: THREE.HalfFloatType,
-            });
-            const comp = new EffectComposer(renderer, msaaTarget);
-            comp.addPass(new RenderPass(scene, camera));
-            // Threshold 0.82 — catches emissive car lights without over-blooming body
-            comp.addPass(new UnrealBloomPass(new THREE.Vector2(cw, ch), 0.18, 0.5, 0.82));
-            comp.addPass(new SMAAPass());
-            comp.addPass(new OutputPass());
-            composer = comp;
-          }
-        } catch (e) { console.warn('Post-processing:', e); }
+        if (!disposed) {
+          const cw = el.offsetWidth, ch = el.offsetHeight;
+          const msaaTarget = new THREE.WebGLRenderTarget(cw, ch, {
+            samples: 8, type: THREE.HalfFloatType,
+          });
+          const comp = new EC(renderer, msaaTarget);
+          comp.addPass(new RP(scene, camera));
+          comp.addPass(new UBP(new THREE.Vector2(cw, ch), 0.18, 0.5, 0.82));
+          comp.addPass(new SP());
+          comp.addPass(new OP());
+          composer = comp;
+        }
+
       } catch (e) {
-        console.error('Ferrari model error:', e);
+        console.error('DettagliScene:', e);
       }
     })();
 
@@ -618,8 +623,8 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
         ref={canvasRef}
         style={{ width: '100%', height: '100%', display: 'block', cursor: 'grab', touchAction: 'none', pointerEvents: 'auto' }}
       />
-      {/* Rotation control — positioned below the car, above the bottom label bar */}
-      <div className="absolute left-0 right-0 flex flex-col items-center gap-2.5 select-none pointer-events-none" style={{ bottom: '6.5rem' }}>
+      {/* Rotation control — anchored in the right (Dettagli) half of the hero */}
+      <div className="absolute flex flex-col items-center gap-2.5 select-none pointer-events-none" style={{ bottom: '6.5rem', left: '58%', right: '4%' }}>
         <span style={{ fontSize: '7px', letterSpacing: '0.5em', color: 'rgba(255,255,255,0.18)', textTransform: 'uppercase' }}>
           Rotate
         </span>
