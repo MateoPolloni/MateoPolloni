@@ -257,9 +257,15 @@ function DettagliLabels() {
    DETTAGLI SCENE — luxury automotive void
 ═══════════════════════════════════════════════ */
 function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:number;y:number}> }) {
-  const ref = useRef<HTMLCanvasElement>(null);
+  const canvasRef    = useRef<HTMLCanvasElement>(null);
+  const indicatorRef = useRef<HTMLDivElement>(null);
+  const degreesRef   = useRef<HTMLDivElement>(null);
+  const barRef       = useRef<HTMLDivElement>(null);
+  const rotRef  = useRef(0.3); // current Y rotation — shared between RAF loop + UI
+  const dragRef = useRef({ active: false, startX: 0, startRot: 0, velocity: 0, barActive: false });
+
   useEffect(() => {
-    const el = ref.current; if (!el) return;
+    const el = canvasRef.current; if (!el) return;
     let disposed = false;
     const cleanups: (() => void)[] = [];
 
@@ -267,9 +273,9 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
       const THREE = await import('three');
       if (disposed) return;
 
-      // ── SCENE: pure dark void ──────────────────
+      // ── SCENE ─────────────────────────────────
       const scene = new THREE.Scene();
-      scene.background = new THREE.Color('#000003');
+      scene.background = new THREE.Color('#020110'); // deep void with subtle violet cast
 
       const W = el.offsetWidth, H = el.offsetHeight;
       const camera = new THREE.PerspectiveCamera(38, W / H, 0.1, 100);
@@ -282,8 +288,20 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 0.68;
+      renderer.toneMappingExposure = 0.65;
       cleanups.push(() => renderer.dispose());
+
+      // ── LIGHT STREAKS (suggest studio depth) ──
+      const mkStreak = (x: number, y: number, z: number, rz: number, op: number) => {
+        scene.add(Object.assign(new THREE.Mesh(
+          new THREE.PlaneGeometry(0.02, 10),
+          new THREE.MeshBasicMaterial({ color: '#c8d4f0', transparent: true, opacity: op,
+            blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }),
+        ), { position: new THREE.Vector3(x, y, z), rotation: new THREE.Euler(0, 0, rz) }));
+      };
+      mkStreak(-4, 5, 1.5, -0.65, 0.022);
+      mkStreak(3, 5.5, -2.5, 0.5, 0.014);
+      mkStreak(-1, 6, 0.5, -0.28, 0.017);
 
       // ── DUST MOTES ────────────────────────────
       const N = 160;
@@ -304,11 +322,9 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
       scene.add(new THREE.Points(dustGeo, dustMat));
       cleanups.push(() => { dustGeo.dispose(); dustMat.dispose(); });
 
-      // ── BASE LIGHTS (for initial frames before area lights load) ──
+      // ── BASE LIGHTS ───────────────────────────
       scene.add(new THREE.AmbientLight('#060612', 0.04));
-
-      // Shadow-casting spot needed for SSAOPass depth pass
-      const shadowSpot = new THREE.SpotLight('#e8e0d0', 2.0, 25, 0.45, 0.8);
+      const shadowSpot = new THREE.SpotLight('#e8e0d0', 1.8, 25, 0.45, 0.8);
       shadowSpot.position.set(-3, 8, 3);
       shadowSpot.castShadow = true;
       shadowSpot.shadow.mapSize.set(2048, 2048);
@@ -321,43 +337,79 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let composer: any = null;
       let topBox: ThreeNS.RectAreaLight | null = null;
-      let autoRot = 0.3, mrY = 0, tY = 0, mrX = 0, tX = 0;
+      let mrY = 0, tY = 0, mrX = 0, tX = 0;
       let raf: number;
       const dustAttr = dustGeo.attributes.position as ThreeNS.BufferAttribute;
+      const drag = dragRef.current;
 
-      // ── RAF LOOP (starts immediately) ─────────
+      // ── RAF LOOP ──────────────────────────────
       const loop = () => {
         raf = requestAnimationFrame(loop);
         if (document.hidden || disposed) return;
-        autoRot += 0.0009; // slow, deliberate — premium feel
-        tY = (mouseRef.current.x - 0.5) * 0.28;
-        tX = (mouseRef.current.y - 0.5) * -0.10;
+
+        // Rotation: apply inertia then gentle auto-rotate
+        if (!drag.active && !drag.barActive) {
+          drag.velocity *= 0.92;
+          rotRef.current += drag.velocity + 0.0009;
+        }
+
+        // Mouse parallax — frozen while dragging for smooth feel
+        tY = drag.active ? mrY : (mouseRef.current.x - 0.5) * 0.28;
+        tX = drag.active ? mrX : (mouseRef.current.y - 0.5) * -0.10;
         mrY += (tY - mrY) * 0.014;
         mrX += (tX - mrX) * 0.014;
 
         if (carModel) {
-          carModel.rotation.y = autoRot + mrY;
+          carModel.rotation.y = rotRef.current + mrY;
           carModel.rotation.x = -0.05 + mrX * 0.08;
-          carModel.position.y = 0.08 + Math.sin(autoRot * 0.60) * 0.065;
+          carModel.position.y = 0.08 + Math.sin(rotRef.current * 0.60) * 0.065;
         }
 
-        // Drift dust motes upward slowly
         for (let i = 0; i < N; i++) {
           const y = dustAttr.getY(i) + dSpd[i];
           dustAttr.setY(i, y > 5.5 ? 0 : y);
         }
         dustAttr.needsUpdate = true;
 
-        // Softbox moves subtly with cursor — shifts reflection highlight across body
         if (topBox) {
           topBox.position.x = -1.0 + mouseRef.current.x * 1.4;
           topBox.lookAt(0, 0, 0);
         }
 
+        // Update rotation bar imperatively — zero re-renders
+        const norm = ((rotRef.current % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+        if (indicatorRef.current) indicatorRef.current.style.left = `${norm / (Math.PI * 2) * 100}%`;
+        if (degreesRef.current)   degreesRef.current.textContent  = `${String(Math.round(norm * 180 / Math.PI)).padStart(3, '0')}°`;
+
         composer ? composer.render() : renderer.render(scene, camera);
       };
       loop();
       cleanups.push(() => cancelAnimationFrame(raf));
+
+      // ── CANVAS DRAG — click & drag to rotate ──
+      const onPtrDown = (e: PointerEvent) => {
+        drag.active = true;
+        drag.startX = e.clientX;
+        drag.startRot = rotRef.current;
+        drag.velocity = 0;
+        el.setPointerCapture(e.pointerId);
+        el.style.cursor = 'grabbing';
+      };
+      const onPtrMove = (e: PointerEvent) => {
+        if (!drag.active) return;
+        const newRot = drag.startRot + ((e.clientX - drag.startX) / el.clientWidth) * Math.PI * 3;
+        drag.velocity = drag.velocity * 0.3 + (newRot - rotRef.current) * 0.7;
+        rotRef.current = newRot;
+      };
+      const onPtrUp = () => { drag.active = false; el.style.cursor = 'grab'; };
+      el.addEventListener('pointerdown', onPtrDown);
+      el.addEventListener('pointermove', onPtrMove);
+      el.addEventListener('pointerup',   onPtrUp);
+      cleanups.push(() => {
+        el.removeEventListener('pointerdown', onPtrDown);
+        el.removeEventListener('pointermove', onPtrMove);
+        el.removeEventListener('pointerup',   onPtrUp);
+      });
 
       // ── RESIZE ────────────────────────────────
       const ro = new ResizeObserver(() => {
@@ -370,33 +422,27 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
       cleanups.push(() => ro.disconnect());
 
       // ── RECT AREA LIGHTS (async) ──────────────
-      // Key technique: large area lights create the long rectangular reflections
-      // characteristic of luxury automotive photography
       try {
         const { RectAreaLightUniformsLib } = await import('three/examples/jsm/lights/RectAreaLightUniformsLib.js');
         if (disposed) return;
         RectAreaLightUniformsLib.init();
 
-        // Large overhead softbox — warm, wide; creates hood/roof/windshield reflection
-        topBox = new THREE.RectAreaLight('#f8f0e2', 3.2, 14, 5);
+        topBox = new THREE.RectAreaLight('#f8f0e2', 2.8, 14, 5);
         topBox.position.set(-1, 7, 1);
         topBox.lookAt(0, 0, 0);
         scene.add(topBox);
 
-        // Left vertical strip — narrow, tall; creates the long edge highlight on the door
-        const lStrip = new THREE.RectAreaLight('#8898cc', 2.2, 0.45, 6);
+        const lStrip = new THREE.RectAreaLight('#8898cc', 1.9, 0.45, 6);
         lStrip.position.set(-5.5, 2, 0);
         lStrip.lookAt(0, 1, 0);
         scene.add(lStrip);
 
-        // Right rear strip — cold silver; separates rear silhouette from the void
-        const rStrip = new THREE.RectAreaLight('#5870a0', 2.0, 0.4, 4);
+        const rStrip = new THREE.RectAreaLight('#5870a0', 1.6, 0.4, 4);
         rStrip.position.set(4.5, 2, -4.5);
         rStrip.lookAt(0, 1, 0);
         scene.add(rStrip);
 
-        // Low front wash — barely warm; lifts nose fascia without a hard shadow
-        const fWash = new THREE.RectAreaLight('#c8b898', 1.0, 3, 1.5);
+        const fWash = new THREE.RectAreaLight('#c8b898', 0.8, 3, 1.5);
         fWash.position.set(-2, 0.8, 5);
         fWash.lookAt(0, 0.5, 0);
         scene.add(fWash);
@@ -433,29 +479,41 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
 
         const model: ThreeNS.Object3D = gltf.scene;
 
-        // Deep black automotive lacquer — dark base with sharp clearcoat
         const bodyPaint = new THREE.MeshPhysicalMaterial({
           color: '#060608',
           metalness: 0.82,
           roughness: 0.12,
           clearcoat: 1.0,
-          clearcoatRoughness: 0.04, // sharp clearcoat = long area-light streaks on body
-          envMapIntensity: 1.0,
-          specularIntensity: 1.0,
+          clearcoatRoughness: 0.04,
+          envMapIntensity: 0.65, // reduced — prevents reflections washing out the black
+          specularIntensity: 0.9,
           specularColor: new THREE.Color('#ccd4f0'),
         });
         const glassMat = new THREE.MeshPhysicalMaterial({
           color: '#080e18', roughness: 0.04, transmission: 0.9,
-          transparent: true, opacity: 0.3, ior: 1.52, envMapIntensity: 0.6,
+          transparent: true, opacity: 0.3, ior: 1.52, envMapIntensity: 0.5,
         });
         const detailMat = new THREE.MeshStandardMaterial({
           color: '#0c0c12', roughness: 0.5, metalness: 0.2,
         });
         const rimMat = new THREE.MeshPhysicalMaterial({
-          color: '#181820', metalness: 0.95, roughness: 0.15, envMapIntensity: 1.0,
+          color: '#181820', metalness: 0.95, roughness: 0.15, envMapIntensity: 0.8,
         });
         const tireMat = new THREE.MeshStandardMaterial({
           color: '#0c0c0c', roughness: 0.9, metalness: 0.0,
+        });
+        const tailMat = new THREE.MeshPhysicalMaterial({
+          color: '#1a0000',
+          emissive: new THREE.Color('#ff1a00'),
+          emissiveIntensity: 2.5,
+          roughness: 0.1,
+          transparent: true, opacity: 0.95,
+        });
+        const headMat = new THREE.MeshPhysicalMaterial({
+          color: '#080c10',
+          emissive: new THREE.Color('#a8c4ff'),
+          emissiveIntensity: 1.5,
+          roughness: 0.05,
         });
 
         model.traverse((child: ThreeNS.Object3D) => {
@@ -472,14 +530,31 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
             mesh.material = rimMat;
           } else if (n.includes('interior') || n.includes('seat') || n.includes('steer')) {
             mesh.material = detailMat;
+          } else if (n.includes('tail') || n.includes('brake') ||
+            (n.includes('light') && (n.includes('_b') || n.includes('rear') || n.includes('back')))) {
+            mesh.material = tailMat;
+          } else if (n.includes('head') ||
+            (n.includes('light') && (n.includes('_f') || n.includes('front')))) {
+            mesh.material = headMat;
           } else {
             mesh.material = bodyPaint;
           }
         });
 
-        model.position.set(0, 0.08, 0); // initial float height
+        model.position.set(0, 0.08, 0);
         carModel = model;
         scene.add(model);
+
+        // Tail light halo — red point glow at rear
+        const tailGlow = new THREE.PointLight('#ff1800', 1.0, 3.5);
+        tailGlow.position.set(0, 0.45, -2.1);
+        scene.add(tailGlow);
+
+        // Headlight halo — subtle cool-white at front
+        const headGlow = new THREE.PointLight('#c8dcff', 0.45, 2.8);
+        headGlow.position.set(0, 0.5, 2.3);
+        scene.add(headGlow);
+
         draco.dispose();
 
         // ── POST-PROCESSING ──────────────────────
@@ -496,18 +571,14 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
           ]);
           if (!disposed) {
             const cw = el.offsetWidth, ch = el.offsetHeight;
-            // MSAA render target — EffectComposer normally uses a non-MSAA buffer,
-            // which discards the renderer's antialias entirely. Passing a target with
-            // samples: 8 re-enables 8× MSAA inside the postprocessing pipeline.
             const msaaTarget = new THREE.WebGLRenderTarget(cw, ch, {
               samples: 8,
               type: THREE.HalfFloatType,
             });
             const comp = new EffectComposer(renderer, msaaTarget);
             comp.addPass(new RenderPass(scene, camera));
-            // Bloom — barely perceptible, only clearcoat specular hot-spots
-            comp.addPass(new UnrealBloomPass(new THREE.Vector2(cw, ch), 0.12, 0.5, 0.90));
-            // SMAA — resolves sub-pixel edge residuals that MSAA can't catch
+            // Threshold 0.82 — catches emissive car lights without over-blooming body
+            comp.addPass(new UnrealBloomPass(new THREE.Vector2(cw, ch), 0.18, 0.5, 0.82));
             comp.addPass(new SMAAPass());
             comp.addPass(new OutputPass());
             composer = comp;
@@ -521,7 +592,66 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
     return () => { disposed = true; cleanups.forEach(fn => fn()); };
   }, [mouseRef]);
 
-  return <canvas ref={ref} className="absolute inset-0" style={{ width: '100%', height: '100%', display: 'block' }} />;
+  // ── BAR DRAG HANDLERS ─────────────────────────
+  const onBarPtrDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    const bar = barRef.current; if (!bar) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    dragRef.current.barActive = true;
+    dragRef.current.velocity = 0;
+    const rect = bar.getBoundingClientRect();
+    rotRef.current = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)) * Math.PI * 2;
+  }, []);
+  const onBarPtrMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragRef.current.barActive) return;
+    const bar = barRef.current; if (!bar) return;
+    const rect = bar.getBoundingClientRect();
+    rotRef.current = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)) * Math.PI * 2;
+  }, []);
+  const onBarPtrUp = useCallback(() => { dragRef.current.barActive = false; }, []);
+
+  return (
+    <div className="absolute inset-0">
+      <canvas
+        ref={canvasRef}
+        style={{ width: '100%', height: '100%', display: 'block', cursor: 'grab', touchAction: 'none' }}
+      />
+      {/* Rotation control */}
+      <div className="absolute bottom-6 left-0 right-0 flex flex-col items-center gap-2.5 select-none pointer-events-none">
+        <span style={{ fontSize: '7px', letterSpacing: '0.5em', color: 'rgba(255,255,255,0.18)', textTransform: 'uppercase' }}>
+          Rotate
+        </span>
+        <div
+          ref={barRef}
+          className="relative pointer-events-auto"
+          style={{ width: '140px', height: '1px', background: 'rgba(255,255,255,0.08)', cursor: 'ew-resize' }}
+          onPointerDown={onBarPtrDown}
+          onPointerMove={onBarPtrMove}
+          onPointerUp={onBarPtrUp}
+        >
+          <div style={{ position: 'absolute', top: '50%', left: '0%',   width: '1px', height: '6px', transform: 'translate(-50%,-50%)', background: 'rgba(255,255,255,0.22)' }} />
+          <div style={{ position: 'absolute', top: '50%', left: '100%', width: '1px', height: '6px', transform: 'translate(-50%,-50%)', background: 'rgba(255,255,255,0.22)' }} />
+          <div style={{ position: 'absolute', top: '50%', left: '50%',  width: '1px', height: '4px', transform: 'translate(-50%,-50%)', background: 'rgba(255,255,255,0.10)' }} />
+          <div
+            ref={indicatorRef}
+            style={{
+              position: 'absolute', top: '50%', left: '0%',
+              width: '6px', height: '6px', borderRadius: '50%',
+              background: 'rgba(255,255,255,0.75)',
+              boxShadow: '0 0 8px rgba(255,255,255,0.5), 0 0 2px rgba(255,255,255,0.9)',
+              transform: 'translate(-50%,-50%)',
+              pointerEvents: 'none',
+            }}
+          />
+        </div>
+        <div
+          ref={degreesRef}
+          style={{ fontSize: '7px', letterSpacing: '0.3em', color: 'rgba(255,255,255,0.12)', fontFamily: 'monospace' }}
+        >
+          017°
+        </div>
+      </div>
+    </div>
+  );
 }
 
 /* ═══════════════════════════════════════════════
