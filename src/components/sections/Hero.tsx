@@ -291,16 +291,29 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
       renderer.toneMappingExposure = 0.72;
       cleanups.push(() => renderer.dispose());
 
-      // ── SHOWROOM FLOOR ────────────────────────
-      // Glossy epoxy floor — reflects area lights like a premium detailing studio
-      const floorMat = new THREE.MeshPhysicalMaterial({
-        color: '#030310', metalness: 0.92, roughness: 0.06, envMapIntensity: 0.5,
+      // ── LIGHT PEDESTAL ───────────────────────
+      // Soft radial glow at ground level — grounds the car without a physical floor
+      const pCanvas = document.createElement('canvas');
+      pCanvas.width = 256; pCanvas.height = 256;
+      const pCtx = pCanvas.getContext('2d');
+      if (pCtx) {
+        const grad = pCtx.createRadialGradient(128, 128, 0, 128, 128, 128);
+        grad.addColorStop(0,   'rgba(155, 130, 95, 0.22)');
+        grad.addColorStop(0.4, 'rgba(90, 75, 60, 0.08)');
+        grad.addColorStop(1,   'rgba(0, 0, 0, 0)');
+        pCtx.fillStyle = grad;
+        pCtx.fillRect(0, 0, 256, 256);
+      }
+      const pTex = new THREE.CanvasTexture(pCanvas);
+      const pMat = new THREE.MeshBasicMaterial({
+        map: pTex, transparent: true, depthWrite: false,
+        blending: THREE.AdditiveBlending,
       });
-      const floorMesh = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), floorMat);
-      floorMesh.rotation.x = -Math.PI / 2;
-      floorMesh.position.y = 0.0;
-      floorMesh.receiveShadow = true;
-      scene.add(floorMesh);
+      const pedestal = new THREE.Mesh(new THREE.CircleGeometry(3.4, 64), pMat);
+      pedestal.rotation.x = -Math.PI / 2;
+      pedestal.position.y = 0.01;
+      scene.add(pedestal);
+      cleanups.push(() => { pTex.dispose(); pMat.dispose(); });
 
       // ── LIGHT STREAKS (suggest studio depth) ──
       const mkStreak = (x: number, y: number, z: number, rz: number, op: number) => {
@@ -330,11 +343,30 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
       const dustGeo = new THREE.BufferGeometry();
       dustGeo.setAttribute('position', new THREE.BufferAttribute(dPos, 3));
       const dustMat = new THREE.PointsMaterial({
-        color: '#a0aac0', size: 0.016, transparent: true, opacity: 0.25,
+        color: '#d4c8a8', size: 0.018, transparent: true, opacity: 0.28,
         sizeAttenuation: true, blending: THREE.AdditiveBlending, depthWrite: false,
       });
       scene.add(new THREE.Points(dustGeo, dustMat));
       cleanups.push(() => { dustGeo.dispose(); dustMat.dispose(); });
+
+      // Bokeh layer — large, ultra-faint, ultra-slow (luxury studio light flecks)
+      const NB = 36;
+      const bPos = new Float32Array(NB * 3);
+      const bSpd = new Float32Array(NB);
+      for (let i = 0; i < NB; i++) {
+        bPos[i * 3]     = (Math.random() - 0.5) * 12;
+        bPos[i * 3 + 1] = Math.random() * 5;
+        bPos[i * 3 + 2] = (Math.random() - 0.5) * 12;
+        bSpd[i] = 0.00003 + Math.random() * 0.00005;
+      }
+      const bokehGeo = new THREE.BufferGeometry();
+      bokehGeo.setAttribute('position', new THREE.BufferAttribute(bPos, 3));
+      const bokehMat = new THREE.PointsMaterial({
+        color: '#f0e8cc', size: 0.10, transparent: true, opacity: 0.07,
+        sizeAttenuation: true, blending: THREE.AdditiveBlending, depthWrite: false,
+      });
+      scene.add(new THREE.Points(bokehGeo, bokehMat));
+      cleanups.push(() => { bokehGeo.dispose(); bokehMat.dispose(); });
 
       // ── BASE LIGHTS ───────────────────────────
       scene.add(new THREE.AmbientLight('#060612', 0.04));
@@ -353,7 +385,8 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
       let topBox: ThreeNS.RectAreaLight | null = null;
       let mrY = 0, tY = 0, mrX = 0, tX = 0;
       let raf: number;
-      const dustAttr = dustGeo.attributes.position as ThreeNS.BufferAttribute;
+      const dustAttr  = dustGeo.attributes.position  as ThreeNS.BufferAttribute;
+      const bokehAttr = bokehGeo.attributes.position as ThreeNS.BufferAttribute;
       const drag = dragRef.current;
 
       // ── RAF LOOP ──────────────────────────────
@@ -384,6 +417,11 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
           dustAttr.setY(i, y > 5.5 ? 0 : y);
         }
         dustAttr.needsUpdate = true;
+        for (let i = 0; i < NB; i++) {
+          const y = bokehAttr.getY(i) + bSpd[i];
+          bokehAttr.setY(i, y > 5.5 ? -0.5 : y);
+        }
+        bokehAttr.needsUpdate = true;
 
         if (topBox) {
           topBox.position.x = -1.0 + mouseRef.current.x * 1.4;
@@ -535,11 +573,11 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
           color: '#0c0c0c', roughness: 0.9, metalness: 0.0,
         });
         const tailMat = new THREE.MeshPhysicalMaterial({
-          color: '#1a0000',
-          emissive: new THREE.Color('#ff1a00'),
-          emissiveIntensity: 2.5,
-          roughness: 0.1,
-          transparent: true, opacity: 0.95,
+          color: '#2a0000',
+          emissive: new THREE.Color('#ff2000'),
+          emissiveIntensity: 6.0,
+          roughness: 0.05,
+          transparent: true, opacity: 0.92,
         });
         const headMat = new THREE.MeshPhysicalMaterial({
           color: '#080c10',
@@ -562,8 +600,10 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
             mesh.material = rimMat;
           } else if (n.includes('interior') || n.includes('seat') || n.includes('steer')) {
             mesh.material = detailMat;
-          } else if (n.includes('tail') || n.includes('brake') ||
-            (n.includes('light') && (n.includes('_b') || n.includes('rear') || n.includes('back')))) {
+          } else if (
+            (n.includes('light') || n.includes('lamp')) &&
+            (n.includes('tail') || n.includes('_b') || n.includes('rear') || n.includes('back'))
+          ) {
             mesh.material = tailMat;
           } else if (n.includes('head') ||
             (n.includes('light') && (n.includes('_f') || n.includes('front')))) {
@@ -586,7 +626,7 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
           });
           const comp = new EC(renderer, msaaTarget);
           comp.addPass(new RP(scene, camera));
-          comp.addPass(new UBP(new THREE.Vector2(cw, ch), 0.18, 0.5, 0.82));
+          comp.addPass(new UBP(new THREE.Vector2(cw, ch), 0.22, 0.6, 0.75));
           comp.addPass(new SP());
           comp.addPass(new OP());
           composer = comp;
