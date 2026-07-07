@@ -726,7 +726,6 @@ export default function Hero() {
   const leftClip  = useTransform(divider,v=>`polygon(0 0, ${v}% 0, ${v}% 100%, 0 100%)`);
   const rightClip = useTransform(divider,v=>`polygon(${v}% 0, 100% 0, 100% 100%, ${v}% 100%)`);
   const divPos    = useTransform(divider,v=>`${v}%`);
-  const subOpacityDettagli = useTransform(divider,[43,57],[1,0]);
   const textX = useTransform(mx,[0,1],[7,-7]);
   const textY = useTransform(my,[0,1],[3.5,-3.5]);
 
@@ -782,7 +781,7 @@ export default function Hero() {
         }}
       />
 
-      {/* Headline */}
+      {/* Headline — h1 visible; subtext transparent (holds layout + a11y, covered by clip layers) */}
       <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none px-8">
         <motion.div
           className="text-center"
@@ -797,18 +796,50 @@ export default function Hero() {
               <>Diseño sitios web<br/>que{' '}<em style={{fontFamily:'var(--font-cormorant)',fontStyle:'italic',fontWeight:300,letterSpacing:'0.01em'}}>transmiten</em>{' '}algo.</>
             )}
           </h1>
-          <div style={{position:'relative',margin:'1.4rem auto 0',fontFamily:'var(--font-sans)',fontSize:'clamp(12px, 1.05vw, 15px)',lineHeight:1.75,letterSpacing:'0.01em',maxWidth:'360px'}}>
-            {/* SoundBuy identity — cool purple, always the base layer */}
-            <span style={{display:'block',background:'linear-gradient(135deg,#7068a8 0%,#a060d8 100%)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>
-              {t.hero.sub}
-            </span>
-            {/* Dettagli identity — warm ivory to aged gold, fades in as right side dominates */}
-            <motion.span style={{display:'block',position:'absolute',top:0,left:0,right:0,opacity:subOpacityDettagli,background:'linear-gradient(135deg,#f0ece4 0%,#e0ceaa 45%,#c8a050 100%)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>
-              {t.hero.sub}
-            </motion.span>
-          </div>
+          <p style={{margin:'1.4rem auto 0',fontFamily:'var(--font-sans)',fontSize:'clamp(12px, 1.05vw, 15px)',lineHeight:1.75,letterSpacing:'0.01em',color:'transparent',maxWidth:'360px'}}>
+            {t.hero.sub}
+          </p>
         </motion.div>
       </div>
+
+      {/* Subtext — SoundBuy purple, clipped to left world.
+          inset-0 container = same coordinate space as leftClip, so % aligns pixel-perfectly. */}
+      <motion.div
+        className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none px-8"
+        style={{clipPath:leftClip}}
+        aria-hidden="true"
+      >
+        <motion.div className="text-center" style={{x:textX,y:textY}}
+          initial={{opacity:0,y:22}} animate={{opacity:1,y:0}}
+          transition={{duration:1.25,delay:0.35,ease:[0.16,1,0.3,1]}}
+        >
+          <h1 style={{visibility:'hidden',fontFamily:'var(--font-display)',fontWeight:600,fontSize:'clamp(36px, 5.6vw, 90px)',lineHeight:1.1,letterSpacing:'-0.03em'}}>
+            {lang==='en'?(<>I design websites<br/>that{' '}<em style={{fontFamily:'var(--font-cormorant)',fontStyle:'italic',fontWeight:300,letterSpacing:'0.01em'}}>feel</em>{' '}like something.</>):(<>Diseño sitios web<br/>que{' '}<em style={{fontFamily:'var(--font-cormorant)',fontStyle:'italic',fontWeight:300,letterSpacing:'0.01em'}}>transmiten</em>{' '}algo.</>)}
+          </h1>
+          <p style={{margin:'1.4rem auto 0',fontFamily:'var(--font-sans)',fontSize:'clamp(12px, 1.05vw, 15px)',lineHeight:1.75,letterSpacing:'0.01em',maxWidth:'360px',background:'linear-gradient(135deg,#7068a8 0%,#a060d8 100%)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>
+            {t.hero.sub}
+          </p>
+        </motion.div>
+      </motion.div>
+
+      {/* Subtext — Dettagli warm ivory-to-gold, clipped to right world */}
+      <motion.div
+        className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none px-8"
+        style={{clipPath:rightClip}}
+        aria-hidden="true"
+      >
+        <motion.div className="text-center" style={{x:textX,y:textY}}
+          initial={{opacity:0,y:22}} animate={{opacity:1,y:0}}
+          transition={{duration:1.25,delay:0.35,ease:[0.16,1,0.3,1]}}
+        >
+          <h1 style={{visibility:'hidden',fontFamily:'var(--font-display)',fontWeight:600,fontSize:'clamp(36px, 5.6vw, 90px)',lineHeight:1.1,letterSpacing:'-0.03em'}}>
+            {lang==='en'?(<>I design websites<br/>that{' '}<em style={{fontFamily:'var(--font-cormorant)',fontStyle:'italic',fontWeight:300,letterSpacing:'0.01em'}}>feel</em>{' '}like something.</>):(<>Diseño sitios web<br/>que{' '}<em style={{fontFamily:'var(--font-cormorant)',fontStyle:'italic',fontWeight:300,letterSpacing:'0.01em'}}>transmiten</em>{' '}algo.</>)}
+          </h1>
+          <p style={{margin:'1.4rem auto 0',fontFamily:'var(--font-sans)',fontSize:'clamp(12px, 1.05vw, 15px)',lineHeight:1.75,letterSpacing:'0.01em',maxWidth:'360px',background:'linear-gradient(135deg,#f0ece4 0%,#e0ceaa 45%,#c8a050 100%)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>
+            {t.hero.sub}
+          </p>
+        </motion.div>
+      </motion.div>
 
       {/* Bottom bar */}
       <div className="absolute inset-x-0 bottom-0 z-10 flex items-end justify-between px-10 md:px-14 pb-9 pointer-events-none">
