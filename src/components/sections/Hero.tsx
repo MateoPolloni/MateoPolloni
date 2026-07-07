@@ -90,6 +90,7 @@ function SoundBuyCanvas({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numb
 ═══════════════════════════════════════════════ */
 function GlassNote({ note, onBurst }: { note:NoteItem; onBurst:(id:string,x:number,y:number)=>void }) {
   const ref = useRef<HTMLDivElement>(null);
+  const idx = parseInt(note.id.slice(1)) - 1; // 0–4, used to stagger each note's animation phase
   const handleClick = () => {
     if (!note.alive || !ref.current) return;
     const rect = ref.current.getBoundingClientRect();
@@ -100,6 +101,7 @@ function GlassNote({ note, onBurst }: { note:NoteItem; onBurst:(id:string,x:numb
       ref={ref}
       onClick={handleClick}
       style={{
+        position: 'relative',
         width:  note.size,
         height: note.size,
         borderRadius: '50%',
@@ -118,14 +120,24 @@ function GlassNote({ note, onBurst }: { note:NoteItem; onBurst:(id:string,x:numb
       animate={note.alive ? { opacity:1, scale:1 } : { opacity:0, scale:0.2 }}
       exit={{ opacity:0, scale:0 }}
       transition={{ duration: note.alive ? 0.8 : 0.4, ease:[0.16,1,0.3,1] }}
-      // continuous float
       whileHover={{ scale:1.08, boxShadow:'0 0 32px rgba(124,58,237,0.28), inset 0 1px 0 rgba(255,255,255,0.15)' }}
     >
-      {/* inner glow highlight */}
+      {/* Ripple ring — periodic pulse invites the click without saying a word */}
+      <motion.div
+        style={{ position:'absolute', inset:-6, borderRadius:'50%', border:'1px solid rgba(192,132,252,0.5)', pointerEvents:'none' }}
+        animate={{ scale:[1, 1.6, 2.0], opacity:[0.65, 0.14, 0] }}
+        transition={{ duration:2.4, repeat:Infinity, repeatDelay:2.0, ease:'easeOut', delay: idx * 0.85 }}
+      />
+      {/* Inner glow highlight */}
       <div style={{ position:'absolute', top:'12%', left:'18%', width:'28%', height:'22%', borderRadius:'50%', background:'rgba(255,255,255,0.09)', filter:'blur(3px)' }} />
-      <span style={{ fontSize: note.size * 0.36, lineHeight:1, color:'#e2ceff', textShadow:'0 0 12px rgba(192,132,252,0.9), 0 0 28px rgba(124,58,237,0.5)', position:'relative', zIndex:1 }}>
+      {/* Glyph — gently brightens to suggest it's alive and waiting */}
+      <motion.span
+        style={{ fontSize: note.size * 0.36, lineHeight:1, color:'#e2ceff', textShadow:'0 0 12px rgba(192,132,252,0.9), 0 0 28px rgba(124,58,237,0.5)', position:'relative', zIndex:1 }}
+        animate={{ filter:['brightness(1)', 'brightness(1.5)', 'brightness(1)', 'brightness(1.35)', 'brightness(1)'] }}
+        transition={{ duration:2.8 + idx * 0.45, repeat:Infinity, ease:'easeInOut', delay: idx * 0.55 }}
+      >
         {note.glyph}
-      </span>
+      </motion.span>
     </motion.div>
   );
 }
@@ -180,78 +192,6 @@ function BurstEffect({ x, y }: { x:number; y:number }) {
   );
 }
 
-/* ═══════════════════════════════════════════════
-   SOUNDBUY INFO LABELS
-═══════════════════════════════════════════════ */
-function SoundBuyLabels() {
-  return (
-    <motion.div
-      className="absolute inset-0 pointer-events-none select-none"
-      initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ delay:1.4, duration:1.2 }}
-    >
-      {/* NOW PLAYING — top left */}
-      <div style={{ position:'absolute', top:'14%', left:'5%' }}>
-        <p style={{ fontFamily:'var(--font-sans)', fontSize:'7px', letterSpacing:'0.28em', textTransform:'uppercase', color:'rgba(192,132,252,0.45)', marginBottom:6 }}>Now Playing</p>
-        <p style={{ fontFamily:'var(--font-display)', fontSize:'14px', color:'rgba(225,210,255,0.75)', letterSpacing:'0.04em' }}>Midnight Bloom</p>
-        <p style={{ fontFamily:'var(--font-sans)', fontSize:'9px', color:'rgba(160,120,220,0.4)', letterSpacing:'0.1em', marginTop:3 }}>SoundBuy Originals</p>
-      </div>
-
-      {/* BPM — middle left */}
-      <div style={{ position:'absolute', top:'46%', left:'5%' }}>
-        <p style={{ fontFamily:'var(--font-sans)', fontSize:'7px', letterSpacing:'0.28em', textTransform:'uppercase', color:'rgba(192,132,252,0.4)', marginBottom:6 }}>BPM</p>
-        <p style={{ fontFamily:'var(--font-display)', fontSize:'22px', color:'rgba(225,210,255,0.7)', letterSpacing:'-0.02em', lineHeight:1 }}>128</p>
-        {/* Mini waveform */}
-        <svg width="70" height="16" viewBox="0 0 70 16" style={{ marginTop:8, opacity:0.45 }}>
-          {[3,5,8,4,11,7,9,5,13,8,6,4,9,12,7,5,3,8,6,4].map((h,i)=>(
-            <rect key={i} x={i*3.5} y={(16-h)/2} width="2" height={h} rx="1" fill="#c084fc" />
-          ))}
-        </svg>
-      </div>
-
-      {/* KEY — lower left */}
-      <div style={{ position:'absolute', top:'70%', left:'5%' }}>
-        <p style={{ fontFamily:'var(--font-sans)', fontSize:'7px', letterSpacing:'0.28em', textTransform:'uppercase', color:'rgba(192,132,252,0.4)', marginBottom:6 }}>Key</p>
-        <p style={{ fontFamily:'var(--font-display)', fontSize:'18px', color:'rgba(225,210,255,0.65)', letterSpacing:'0.02em' }}>Am</p>
-      </div>
-    </motion.div>
-  );
-}
-
-/* ═══════════════════════════════════════════════
-   DETTAGLI INFO LABELS
-═══════════════════════════════════════════════ */
-function DettagliLabels() {
-  return (
-    <motion.div
-      className="absolute inset-0 pointer-events-none select-none"
-      initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ delay:1.6, duration:1.2 }}
-    >
-      {/* DETAILING — top right */}
-      <div style={{ position:'absolute', top:'14%', right:'4%', textAlign:'right' }}>
-        <p style={{ fontFamily:'var(--font-sans)', fontSize:'7px', letterSpacing:'0.28em', textTransform:'uppercase', color:'rgba(242,241,237,0.3)', marginBottom:6 }}>Detailing</p>
-        <p style={{ fontFamily:'var(--font-cormorant)', fontSize:'17px', fontWeight:500, color:'rgba(242,241,237,0.65)', letterSpacing:'0.06em' }}>Perfection</p>
-        <p style={{ fontFamily:'var(--font-sans)', fontSize:'9px', color:'rgba(200,200,200,0.3)', letterSpacing:'0.1em', marginTop:3 }}>In Every Detail</p>
-      </div>
-
-      {/* FINISH — middle right */}
-      <div style={{ position:'absolute', top:'46%', right:'4%', textAlign:'right' }}>
-        <p style={{ fontFamily:'var(--font-sans)', fontSize:'7px', letterSpacing:'0.28em', textTransform:'uppercase', color:'rgba(242,241,237,0.3)', marginBottom:6 }}>Finish</p>
-        <div style={{ display:'flex', alignItems:'center', gap:8, justifyContent:'flex-end' }}>
-          <p style={{ fontFamily:'var(--font-cormorant)', fontSize:'16px', fontWeight:500, color:'rgba(242,241,237,0.6)', letterSpacing:'0.06em' }}>Obsidian Black</p>
-          <div style={{ width:8, height:8, borderRadius:'50%', background:'#0a0a0e', border:'1px solid rgba(242,241,237,0.25)', boxShadow:'0 0 6px rgba(242,241,237,0.1)' }} />
-        </div>
-      </div>
-
-      {/* PROCESS — lower right */}
-      <div style={{ position:'absolute', top:'68%', right:'4%', textAlign:'right' }}>
-        <p style={{ fontFamily:'var(--font-sans)', fontSize:'7px', letterSpacing:'0.28em', textTransform:'uppercase', color:'rgba(242,241,237,0.3)', marginBottom:8 }}>Process</p>
-        {['Precision','Passion','Purpose'].map(w=>(
-          <p key={w} style={{ fontFamily:'var(--font-cormorant)', fontSize:'14px', fontWeight:500, color:'rgba(242,241,237,0.48)', letterSpacing:'0.06em', lineHeight:1.55 }}>{w}</p>
-        ))}
-      </div>
-    </motion.div>
-  );
-}
 
 /* ═══════════════════════════════════════════════
    DETTAGLI SCENE — luxury automotive void
@@ -752,7 +692,6 @@ export default function Hero() {
       {/* SoundBuy world */}
       <motion.div className="absolute inset-0" style={{clipPath:leftClip,background:'#06060a'}}>
         <SoundBuyCanvas mouseRef={mouseRef} />
-        <SoundBuyLabels />
         <AnimatePresence>
           {notes.map(note=>(
             <FloatingNote key={note.id} note={note} onBurst={handleBurst} />
@@ -763,7 +702,6 @@ export default function Hero() {
       {/* Dettagli world — pointer-events:none, clicks fall through */}
       <motion.div className="absolute inset-0" style={{clipPath:rightClip,pointerEvents:'none'}}>
         <DettagliScene mouseRef={mouseRef} />
-        <DettagliLabels />
       </motion.div>
 
       {/* Burst particles (fixed, above everything) */}

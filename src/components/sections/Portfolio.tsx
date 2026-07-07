@@ -347,21 +347,37 @@ function FuturePhoneMockup() {
 /* ─── Future card logo ─── */
 
 function FutureCardLogo() {
+  const { t } = useLanguage();
   return (
-    <span
-      style={{
-        fontFamily: "var(--font-cormorant, 'Cormorant', serif)",
-        fontWeight: 400,
-        fontStyle: 'italic',
-        fontSize: '24px',
-        letterSpacing: '0.06em',
-        lineHeight: 1.2,
-        display: 'inline-block',
-        color: 'rgba(255,255,255,0.22)',
-      }}
-    >
-      Your Vision, Next
-    </span>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+      <span
+        style={{
+          fontFamily: "var(--font-display, 'Clash Display', sans-serif)",
+          fontWeight: 600,
+          fontSize: '22px',
+          letterSpacing: '-0.01em',
+          lineHeight: 1.1,
+          color: 'rgba(255,255,255,0.22)',
+          display: 'block',
+        }}
+      >
+        {t.portfolio.futureVision}
+      </span>
+      <span
+        style={{
+          fontFamily: "var(--font-display, 'Clash Display', sans-serif)",
+          fontWeight: 500,
+          fontSize: '10px',
+          letterSpacing: '0.22em',
+          lineHeight: 1,
+          color: 'rgba(255,255,255,0.10)',
+          textTransform: 'uppercase',
+          display: 'block',
+        }}
+      >
+        {t.portfolio.futureProject}
+      </span>
+    </div>
   );
 }
 

@@ -15,6 +15,8 @@ export interface Translations {
     label: string;
     viewProject: string;
     projects: { name: string; tag: string; url: string }[];
+    futureVision: string;
+    futureProject: string;
   };
 }
 
@@ -60,6 +62,8 @@ const en: Translations = {
         url: 'https://dettagli-six.vercel.app/',
       },
     ],
+    futureVision: 'Your Vision',
+    futureProject: 'Next Project',
   },
 };
 
@@ -105,6 +109,8 @@ const es: Translations = {
         url: 'https://dettagli-six.vercel.app/',
       },
     ],
+    futureVision: 'Tu Visión',
+    futureProject: 'Futuro Proyecto',
   },
 };
 
