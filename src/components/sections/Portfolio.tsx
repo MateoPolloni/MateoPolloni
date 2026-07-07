@@ -397,12 +397,9 @@ function FutureProjectCard({ index }: { index: number }) {
       className="flex flex-col gap-7"
       style={{ opacity: hovered ? 1 : 0.55, transition: 'opacity 0.5s ease' }}
     >
-      {/* Logo + tag */}
-      <div className="flex flex-col gap-1.5" style={{ minHeight: '64px' }}>
+      {/* Logo */}
+      <div style={{ minHeight: '64px' }}>
         <FutureCardLogo />
-        <span className="font-sans text-[10px] tracking-[0.22em] uppercase" style={{ color: 'rgba(255,255,255,0.18)' }}>
-          Future Project
-        </span>
       </div>
 
       {/* Devices */}

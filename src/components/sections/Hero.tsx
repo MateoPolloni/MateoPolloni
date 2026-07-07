@@ -668,6 +668,9 @@ export default function Hero() {
   const divPos    = useTransform(divider,v=>`${v}%`);
   const textX = useTransform(mx,[0,1],[7,-7]);
   const textY = useTransform(my,[0,1],[3.5,-3.5]);
+  const emColor   = useTransform(divider,[43,57],['#d8c480','#b8a8e0']);
+  const sbOpacity = useTransform(divider,[43,57],[0.55,1.0]);
+  const dtOpacity = useTransform(divider,[43,57],[1.0,0.55]);
 
   // Glass notes state
   const [notes, setNotes] = useState<NoteItem[]>(INIT_NOTES.map(n=>({...n,alive:true})));
@@ -687,7 +690,7 @@ export default function Hero() {
     <motion.section
       className="relative w-full overflow-hidden"
       style={{height:'calc(100dvh - 4rem)',minHeight:'560px'}}
-      initial={{opacity:0}} animate={{opacity:1}} transition={{duration:1.1,ease:'easeOut'}}
+      initial={{opacity:0,scale:0.995}} animate={{opacity:1,scale:1}} transition={{duration:1.4,ease:[0.16,1,0.3,1]}}
     >
       {/* SoundBuy world */}
       <motion.div className="absolute inset-0" style={{clipPath:leftClip,background:'#06060a'}}>
@@ -717,21 +720,27 @@ export default function Hero() {
           background:'linear-gradient(to bottom, transparent 4%, rgba(255,255,255,.08) 26%, rgba(255,255,255,.2) 50%, rgba(255,255,255,.08) 74%, transparent 96%)',
           boxShadow:'0 0 10px rgba(255,255,255,.04), 0 0 28px rgba(255,255,255,.02)',
         }}
-      />
+      >
+        <motion.div
+          style={{ position:'absolute', left:'-1px', width:'3px', height:'60px', background:'linear-gradient(to bottom,transparent,rgba(255,255,255,0.3),transparent)', filter:'blur(1px)', pointerEvents:'none' }}
+          animate={{ top:['8%','72%','8%'] }}
+          transition={{ duration:7, repeat:Infinity, ease:[0.45,0,0.55,1], delay:2.5 }}
+        />
+      </motion.div>
 
       {/* Headline — h1 visible; subtext transparent (holds layout + a11y, covered by clip layers) */}
       <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none px-8">
         <motion.div
           className="text-center"
           style={{x:textX,y:textY}}
-          initial={{opacity:0,y:22}} animate={{opacity:1,y:0}}
-          transition={{duration:1.25,delay:0.35,ease:[0.16,1,0.3,1]}}
+          initial={{opacity:0,y:18,filter:'blur(4px)'}} animate={{opacity:1,y:0,filter:'blur(0px)'}}
+          transition={{duration:1.35,delay:0.4,ease:[0.16,1,0.3,1]}}
         >
           <h1 style={{fontFamily:'var(--font-display)',fontWeight:600,fontSize:'clamp(36px, 5.6vw, 90px)',lineHeight:1.1,letterSpacing:'-0.03em',color:'#F0EDE8'}}>
             {lang==='en'?(
-              <>I design websites<br/>that{' '}<em style={{fontFamily:'var(--font-cormorant)',fontStyle:'italic',fontWeight:300,letterSpacing:'0.01em'}}>feel</em>{' '}like something.</>
+              <>I design websites<br/>that{' '}<motion.em style={{fontFamily:'var(--font-cormorant)',fontStyle:'italic',fontWeight:300,letterSpacing:'0.01em',color:emColor}}>feel</motion.em>{' '}like something.</>
             ):(
-              <>Diseño sitios web<br/>que{' '}<em style={{fontFamily:'var(--font-cormorant)',fontStyle:'italic',fontWeight:300,letterSpacing:'0.01em'}}>transmiten</em>{' '}algo.</>
+              <>Diseño sitios web<br/>que{' '}<motion.em style={{fontFamily:'var(--font-cormorant)',fontStyle:'italic',fontWeight:300,letterSpacing:'0.01em',color:emColor}}>transmiten</motion.em>{' '}algo.</>
             )}
           </h1>
           <p style={{margin:'1.4rem auto 0',fontFamily:'var(--font-sans)',fontSize:'clamp(12px, 1.05vw, 15px)',lineHeight:1.75,letterSpacing:'0.01em',color:'transparent',maxWidth:'360px'}}>
@@ -748,8 +757,8 @@ export default function Hero() {
         aria-hidden="true"
       >
         <motion.div className="text-center" style={{x:textX,y:textY}}
-          initial={{opacity:0,y:22}} animate={{opacity:1,y:0}}
-          transition={{duration:1.25,delay:0.35,ease:[0.16,1,0.3,1]}}
+          initial={{opacity:0,y:18,filter:'blur(4px)'}} animate={{opacity:1,y:0,filter:'blur(0px)'}}
+          transition={{duration:1.35,delay:0.4,ease:[0.16,1,0.3,1]}}
         >
           <h1 style={{visibility:'hidden',fontFamily:'var(--font-display)',fontWeight:600,fontSize:'clamp(36px, 5.6vw, 90px)',lineHeight:1.1,letterSpacing:'-0.03em'}}>
             {lang==='en'?(<>I design websites<br/>that{' '}<em style={{fontFamily:'var(--font-cormorant)',fontStyle:'italic',fontWeight:300,letterSpacing:'0.01em'}}>feel</em>{' '}like something.</>):(<>Diseño sitios web<br/>que{' '}<em style={{fontFamily:'var(--font-cormorant)',fontStyle:'italic',fontWeight:300,letterSpacing:'0.01em'}}>transmiten</em>{' '}algo.</>)}
@@ -767,8 +776,8 @@ export default function Hero() {
         aria-hidden="true"
       >
         <motion.div className="text-center" style={{x:textX,y:textY}}
-          initial={{opacity:0,y:22}} animate={{opacity:1,y:0}}
-          transition={{duration:1.25,delay:0.35,ease:[0.16,1,0.3,1]}}
+          initial={{opacity:0,y:18,filter:'blur(4px)'}} animate={{opacity:1,y:0,filter:'blur(0px)'}}
+          transition={{duration:1.35,delay:0.4,ease:[0.16,1,0.3,1]}}
         >
           <h1 style={{visibility:'hidden',fontFamily:'var(--font-display)',fontWeight:600,fontSize:'clamp(36px, 5.6vw, 90px)',lineHeight:1.1,letterSpacing:'-0.03em'}}>
             {lang==='en'?(<>I design websites<br/>that{' '}<em style={{fontFamily:'var(--font-cormorant)',fontStyle:'italic',fontWeight:300,letterSpacing:'0.01em'}}>feel</em>{' '}like something.</>):(<>Diseño sitios web<br/>que{' '}<em style={{fontFamily:'var(--font-cormorant)',fontStyle:'italic',fontWeight:300,letterSpacing:'0.01em'}}>transmiten</em>{' '}algo.</>)}
@@ -783,50 +792,59 @@ export default function Hero() {
       <div className="absolute inset-x-0 bottom-0 z-10 flex items-end justify-between px-10 md:px-14 pb-9 pointer-events-none">
 
         {/* SoundBuy label */}
-        <motion.div className="flex flex-col gap-2.5 pointer-events-auto" initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{duration:.9,delay:.85,ease:[.16,1,.3,1]}}>
-          <div className="flex items-center gap-2">
-            <svg width="18" height="13" viewBox="0 0 18 13" fill="none" aria-hidden="true">
-              {([[3,4],[6,8],[9,13],[12,8],[15,4]] as [number,number][]).map(([x,h],i)=>(
-                <rect key={i} x={x-1} y={(13-h)/2} width="2" height={h} rx="1" fill="rgba(192,132,252,.6)"/>
-              ))}
-            </svg>
-            <span style={{fontFamily:"'Bricolage Grotesque',sans-serif",fontWeight:800,fontSize:'13px',letterSpacing:'0.15em',background:'linear-gradient(135deg,#eeeeff 0%,#c084fc 45%,#7c3aed 100%)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>
-              SOUNDBUY
-            </span>
-          </div>
-          <a href="https://soundbuy-ten.vercel.app/" target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-2 transition-colors duration-300"
-            style={{fontFamily:'var(--font-sans)',fontSize:'8.5px',letterSpacing:'0.28em',textTransform:'uppercase',color:'#5050a0'}}
-            onMouseEnter={e=>(e.currentTarget.style.color='#c084fc')}
-            onMouseLeave={e=>(e.currentTarget.style.color='#5050a0')}
-          >
-            Explore Project
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M1.5 8.5 8.5 1.5M8.5 1.5H3M8.5 1.5V7"/></svg>
-          </a>
+        <motion.div initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{duration:.9,delay:.85,ease:[.16,1,.3,1]}}>
+          <motion.div className="flex flex-col gap-2.5 pointer-events-auto" style={{opacity:sbOpacity}}>
+            <div className="flex items-center gap-2">
+              <svg width="18" height="13" viewBox="0 0 18 13" fill="none" aria-hidden="true">
+                {([[3,4],[6,8],[9,13],[12,8],[15,4]] as [number,number][]).map(([x,h],i)=>(
+                  <rect key={i} x={x-1} y={(13-h)/2} width="2" height={h} rx="1" fill="rgba(192,132,252,.6)"/>
+                ))}
+              </svg>
+              <span style={{fontFamily:"'Bricolage Grotesque',sans-serif",fontWeight:800,fontSize:'13px',letterSpacing:'0.15em',background:'linear-gradient(135deg,#eeeeff 0%,#c084fc 45%,#7c3aed 100%)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>
+                SOUNDBUY
+              </span>
+            </div>
+            <a href="https://soundbuy-ten.vercel.app/" target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-2 transition-colors duration-300"
+              style={{fontFamily:'var(--font-sans)',fontSize:'8.5px',letterSpacing:'0.28em',textTransform:'uppercase',color:'#5050a0'}}
+              onMouseEnter={e=>(e.currentTarget.style.color='#c084fc')}
+              onMouseLeave={e=>(e.currentTarget.style.color='#5050a0')}
+            >
+              Explore Project
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M1.5 8.5 8.5 1.5M8.5 1.5H3M8.5 1.5V7"/></svg>
+            </a>
+          </motion.div>
         </motion.div>
 
         {/* Center hint */}
-        <motion.div className="flex flex-col items-center gap-2.5 pb-0.5" initial={{opacity:0}} animate={{opacity:1}} transition={{duration:1,delay:1.3}}>
-          <span style={{fontFamily:'var(--font-sans)',fontSize:'6.5px',letterSpacing:'0.32em',textTransform:'uppercase',color:'rgba(240,237,232,.22)',textAlign:'center',lineHeight:1.8}}>
-            MOVE THE CURSOR<br/>EXPLORE BOTH WORLDS
-          </span>
-          <div className="w-px h-6" style={{background:'linear-gradient(to bottom,rgba(240,237,232,.2),transparent)'}}/>
+        <motion.div className="flex flex-col items-center gap-2 pb-0.5" initial={{opacity:0}} animate={{opacity:1}} transition={{duration:1,delay:1.6}}>
+          <motion.div
+            style={{display:'flex',gap:'18px',alignItems:'center'}}
+            animate={{opacity:[0.28,0.58,0.28]}}
+            transition={{duration:3.5,repeat:Infinity,ease:'easeInOut'}}
+          >
+            <span style={{fontSize:'11px',color:'rgba(240,237,232,0.9)',fontFamily:'monospace',lineHeight:1}}>‹</span>
+            <span style={{fontSize:'11px',color:'rgba(240,237,232,0.9)',fontFamily:'monospace',lineHeight:1}}>›</span>
+          </motion.div>
+          <div className="w-px h-5" style={{background:'linear-gradient(to bottom,rgba(240,237,232,.18),transparent)'}}/>
         </motion.div>
 
         {/* Dettagli label */}
-        <motion.div className="flex flex-col gap-2.5 items-end pointer-events-auto" initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{duration:.9,delay:1.0,ease:[.16,1,.3,1]}}>
-          <span style={{fontFamily:"'Cormorant',serif",fontWeight:500,fontSize:'16px',letterSpacing:'0.15em',color:'#f2f1ed',textTransform:'uppercase'}}>
-            DETTAGLI
-          </span>
-          <a href="https://dettagli-six.vercel.app/" target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-2 transition-colors duration-300"
-            style={{fontFamily:'var(--font-sans)',fontSize:'8.5px',letterSpacing:'0.28em',textTransform:'uppercase',color:'#606068'}}
-            onMouseEnter={e=>(e.currentTarget.style.color='#f2f1ed')}
-            onMouseLeave={e=>(e.currentTarget.style.color='#606068')}
-          >
-            Explore Project
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M1.5 8.5 8.5 1.5M8.5 1.5H3M8.5 1.5V7"/></svg>
-          </a>
+        <motion.div initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{duration:.9,delay:1.0,ease:[.16,1,.3,1]}}>
+          <motion.div className="flex flex-col gap-2.5 items-end pointer-events-auto" style={{opacity:dtOpacity}}>
+            <span style={{fontFamily:"'Cormorant',serif",fontWeight:500,fontSize:'16px',letterSpacing:'0.15em',color:'#f2f1ed',textTransform:'uppercase'}}>
+              DETTAGLI
+            </span>
+            <a href="https://dettagli-six.vercel.app/" target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-2 transition-colors duration-300"
+              style={{fontFamily:'var(--font-sans)',fontSize:'8.5px',letterSpacing:'0.28em',textTransform:'uppercase',color:'#606068'}}
+              onMouseEnter={e=>(e.currentTarget.style.color='#f2f1ed')}
+              onMouseLeave={e=>(e.currentTarget.style.color='#606068')}
+            >
+              Explore Project
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M1.5 8.5 8.5 1.5M8.5 1.5H3M8.5 1.5V7"/></svg>
+            </a>
+          </motion.div>
         </motion.div>
       </div>
     </motion.section>
