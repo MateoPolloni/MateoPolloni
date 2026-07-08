@@ -301,12 +301,24 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
       }
       const bokehGeo = new THREE.BufferGeometry();
       bokehGeo.setAttribute('position', new THREE.BufferAttribute(bPos, 3));
+      // Circular soft-disc texture — Three.js PointsMaterial defaults to squares without a map
+      const bCanvas = document.createElement('canvas'); bCanvas.width = 32; bCanvas.height = 32;
+      const bCtx = bCanvas.getContext('2d');
+      if (bCtx) {
+        const rg = bCtx.createRadialGradient(16, 16, 0, 16, 16, 16);
+        rg.addColorStop(0, 'rgba(255,255,255,1)');
+        rg.addColorStop(0.5, 'rgba(255,255,255,0.5)');
+        rg.addColorStop(1, 'rgba(255,255,255,0)');
+        bCtx.fillStyle = rg; bCtx.fillRect(0, 0, 32, 32);
+      }
+      const bokehTex = new THREE.CanvasTexture(bCanvas);
       const bokehMat = new THREE.PointsMaterial({
         color: '#f0e8cc', size: 0.10, transparent: true, opacity: 0.07,
         sizeAttenuation: true, blending: THREE.AdditiveBlending, depthWrite: false,
+        map: bokehTex,
       });
       scene.add(new THREE.Points(bokehGeo, bokehMat));
-      cleanups.push(() => { bokehGeo.dispose(); bokehMat.dispose(); });
+      cleanups.push(() => { bokehGeo.dispose(); bokehMat.dispose(); bokehTex.dispose(); });
 
       // ── BASE LIGHTS ───────────────────────────
       scene.add(new THREE.AmbientLight('#060612', 0.04));
@@ -728,13 +740,7 @@ export default function Hero() {
           background:'linear-gradient(to bottom, transparent 4%, rgba(255,255,255,.08) 26%, rgba(255,255,255,.2) 50%, rgba(255,255,255,.08) 74%, transparent 96%)',
           boxShadow:'0 0 10px rgba(255,255,255,.04), 0 0 28px rgba(255,255,255,.02)',
         }}
-      >
-        <motion.div
-          style={{ position:'absolute', left:'-1px', width:'3px', height:'60px', background:'linear-gradient(to bottom,transparent,rgba(255,255,255,0.3),transparent)', filter:'blur(1px)', pointerEvents:'none' }}
-          animate={{ top:['8%','72%','8%'] }}
-          transition={{ duration:7, repeat:Infinity, ease:[0.45,0,0.55,1], delay:2.5 }}
-        />
-      </motion.div>
+      />
 
 {/* Headline — h1 visible; subtext transparent (holds layout + a11y, covered by clip layers) */}
       <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none px-8">
