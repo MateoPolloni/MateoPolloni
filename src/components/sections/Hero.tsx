@@ -228,7 +228,7 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 0.56;
+      renderer.toneMappingExposure = 0.48;
       cleanups.push(() => renderer.dispose());
 
       // ── LIGHT PEDESTAL ───────────────────────
@@ -461,7 +461,7 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
         // ── RECT AREA LIGHTS ──────────────────────
         RectAreaLightUniformsLib.init();
 
-        topBox = new THREE.RectAreaLight('#f8f0e2', 1.7, 14, 5);
+        topBox = new THREE.RectAreaLight('#f8f0e2', 1.2, 14, 5);
         topBox.position.set(-1, 7, 1);
         topBox.lookAt(0, 0, 0);
         scene.add(topBox);
@@ -512,11 +512,11 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
         const bodyPaint = new THREE.MeshPhysicalMaterial({
           color: '#060608',
           metalness: 0.82,
-          roughness: 0.14,
+          roughness: 0.16,
           clearcoat: 1.0,
-          clearcoatRoughness: 0.24,
-          envMapIntensity: 0.36,
-          specularIntensity: 0.46,
+          clearcoatRoughness: 0.30,
+          envMapIntensity: 0.26,
+          specularIntensity: 0.32,
           specularColor: new THREE.Color('#ccd4f0'),
         });
         const glassMat = new THREE.MeshPhysicalMaterial({
@@ -757,7 +757,7 @@ export default function Hero() {
               <>Diseño sitios web<br/>que{' '}<motion.em style={{fontFamily:'var(--font-cormorant)',fontStyle:'italic',fontWeight:300,letterSpacing:'0.01em',color:emColor}}>transmiten</motion.em>{' '}algo.</>
             )}
           </h1>
-          <p style={{margin:'1.4rem auto 0',fontFamily:'var(--font-sans)',fontSize:'clamp(12px, 1.05vw, 15px)',lineHeight:1.75,letterSpacing:'0.01em',color:'transparent',maxWidth:'360px'}}>
+          <p style={{margin:'1.4rem auto 0',fontFamily:'var(--font-sans)',fontSize:'clamp(12px, 1.05vw, 15px)',lineHeight:1.75,letterSpacing:'0.01em',color:'rgba(240,237,232,0.68)',maxWidth:'360px'}}>
             {t.hero.sub}
           </p>
         </motion.div>
@@ -777,7 +777,7 @@ export default function Hero() {
           <h1 style={{visibility:'hidden',fontFamily:'var(--font-display)',fontWeight:600,fontSize:'clamp(36px, 5.6vw, 90px)',lineHeight:1.1,letterSpacing:'-0.03em'}}>
             {lang==='en'?(<>I design websites<br/>that{' '}<em style={{fontFamily:'var(--font-cormorant)',fontStyle:'italic',fontWeight:300,letterSpacing:'0.01em'}}>feel</em>{' '}like something.</>):(<>Diseño sitios web<br/>que{' '}<em style={{fontFamily:'var(--font-cormorant)',fontStyle:'italic',fontWeight:300,letterSpacing:'0.01em'}}>transmiten</em>{' '}algo.</>)}
           </h1>
-          <p style={{margin:'1.4rem auto 0',fontFamily:'var(--font-sans)',fontSize:'clamp(12px, 1.05vw, 15px)',lineHeight:1.75,letterSpacing:'0.01em',maxWidth:'360px',background:'linear-gradient(135deg,#7068a8 0%,#a060d8 100%)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>
+          <p style={{margin:'1.4rem auto 0',fontFamily:'var(--font-sans)',fontSize:'clamp(12px, 1.05vw, 15px)',lineHeight:1.75,letterSpacing:'0.01em',maxWidth:'360px',color:'transparent'}}>
             {t.hero.sub}
           </p>
         </motion.div>
@@ -796,7 +796,7 @@ export default function Hero() {
           <h1 style={{visibility:'hidden',fontFamily:'var(--font-display)',fontWeight:600,fontSize:'clamp(36px, 5.6vw, 90px)',lineHeight:1.1,letterSpacing:'-0.03em'}}>
             {lang==='en'?(<>I design websites<br/>that{' '}<em style={{fontFamily:'var(--font-cormorant)',fontStyle:'italic',fontWeight:300,letterSpacing:'0.01em'}}>feel</em>{' '}like something.</>):(<>Diseño sitios web<br/>que{' '}<em style={{fontFamily:'var(--font-cormorant)',fontStyle:'italic',fontWeight:300,letterSpacing:'0.01em'}}>transmiten</em>{' '}algo.</>)}
           </h1>
-          <p style={{margin:'1.4rem auto 0',fontFamily:'var(--font-sans)',fontSize:'clamp(12px, 1.05vw, 15px)',lineHeight:1.75,letterSpacing:'0.01em',maxWidth:'360px',background:'linear-gradient(135deg,#f0ece4 0%,#e0ceaa 45%,#c8a050 100%)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>
+          <p style={{margin:'1.4rem auto 0',fontFamily:'var(--font-sans)',fontSize:'clamp(12px, 1.05vw, 15px)',lineHeight:1.75,letterSpacing:'0.01em',maxWidth:'360px',color:'transparent'}}>
             {t.hero.sub}
           </p>
         </motion.div>
