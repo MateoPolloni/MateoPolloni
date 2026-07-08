@@ -228,7 +228,7 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 0.66;
+      renderer.toneMappingExposure = 0.56;
       cleanups.push(() => renderer.dispose());
 
       // ── LIGHT PEDESTAL ───────────────────────
@@ -310,7 +310,7 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
 
       // ── BASE LIGHTS ───────────────────────────
       scene.add(new THREE.AmbientLight('#060612', 0.04));
-      const shadowSpot = new THREE.SpotLight('#e8e0d0', 1.4, 25, 0.45, 0.8);
+      const shadowSpot = new THREE.SpotLight('#e8e0d0', 0.95, 25, 0.45, 0.8);
       shadowSpot.position.set(-3, 8, 3);
       shadowSpot.castShadow = true;
       shadowSpot.shadow.mapSize.set(2048, 2048);
@@ -330,9 +330,11 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
       const drag = dragRef.current;
 
       // ── RAF LOOP ──────────────────────────────
+      let bt = 0; // breathe timer — independent of rotation
       const loop = () => {
         raf = requestAnimationFrame(loop);
         if (document.hidden || disposed) return;
+        bt += 0.016;
 
         // Rotation: apply inertia then gentle auto-rotate
         if (!drag.active && !drag.barActive) {
@@ -345,6 +347,12 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
         tX = drag.active ? mrX : (mouseRef.current.y - 0.5) * -0.10;
         mrY += (tY - mrY) * 0.014;
         mrX += (tX - mrX) * 0.014;
+
+        // Camera breathing — slow orbital drift, like a still photographer
+        // circling the subject. ~14s X period, ~22s Y period.
+        camera.position.x = 4.25 + Math.sin(bt * 0.449) * 0.18;
+        camera.position.y = 0.95 + Math.sin(bt * 0.285) * 0.055;
+        camera.lookAt(1.8, 0.5, 0);
 
         if (carModel) {
           carModel.rotation.y = rotRef.current + mrY;
@@ -441,7 +449,7 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
         // ── RECT AREA LIGHTS ──────────────────────
         RectAreaLightUniformsLib.init();
 
-        topBox = new THREE.RectAreaLight('#f8f0e2', 2.4, 14, 5);
+        topBox = new THREE.RectAreaLight('#f8f0e2', 1.7, 14, 5);
         topBox.position.set(-1, 7, 1);
         topBox.lookAt(0, 0, 0);
         scene.add(topBox);
@@ -492,11 +500,11 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
         const bodyPaint = new THREE.MeshPhysicalMaterial({
           color: '#060608',
           metalness: 0.82,
-          roughness: 0.12,
+          roughness: 0.14,
           clearcoat: 1.0,
-          clearcoatRoughness: 0.16,
-          envMapIntensity: 0.52,
-          specularIntensity: 0.58,
+          clearcoatRoughness: 0.24,
+          envMapIntensity: 0.36,
+          specularIntensity: 0.46,
           specularColor: new THREE.Color('#ccd4f0'),
         });
         const glassMat = new THREE.MeshPhysicalMaterial({
@@ -566,7 +574,7 @@ function DettagliScene({ mouseRef }: { mouseRef: React.MutableRefObject<{x:numbe
           });
           const comp = new EC(renderer, msaaTarget);
           comp.addPass(new RP(scene, camera));
-          comp.addPass(new UBP(new THREE.Vector2(cw, ch), 0.22, 0.6, 0.75));
+          comp.addPass(new UBP(new THREE.Vector2(cw, ch), 0.16, 0.5, 0.82));
           comp.addPass(new SP());
           comp.addPass(new OP());
           composer = comp;
@@ -671,6 +679,8 @@ export default function Hero() {
   const emColor   = useTransform(divider,[43,57],['#d8c480','#b8a8e0']);
   const sbOpacity = useTransform(divider,[43,57],[0.55,1.0]);
   const dtOpacity = useTransform(divider,[43,57],[1.0,0.55]);
+  const divPosR   = useTransform(divider, v => `calc(${v}% - 2px)`);
+  const divPosB   = useTransform(divider, v => `calc(${v}% + 2px)`);
 
   // Glass notes state
   const [notes, setNotes] = useState<NoteItem[]>(INIT_NOTES.map(n=>({...n,alive:true})));
@@ -727,6 +737,12 @@ export default function Hero() {
           transition={{ duration:7, repeat:Infinity, ease:[0.45,0,0.55,1], delay:2.5 }}
         />
       </motion.div>
+
+      {/* Chromatic aberration — anamorphic lens split at the world boundary */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{zIndex:6}}>
+        <motion.div style={{ position:'absolute', top:0, bottom:0, left:divPosR, width:'4px', background:'linear-gradient(to bottom,transparent 5%,rgba(255,38,18,0.09) 28%,rgba(255,38,18,0.14) 50%,rgba(255,38,18,0.09) 72%,transparent 95%)', mixBlendMode:'screen' }} />
+        <motion.div style={{ position:'absolute', top:0, bottom:0, left:divPosB, width:'4px', background:'linear-gradient(to bottom,transparent 5%,rgba(18,72,255,0.09) 28%,rgba(18,72,255,0.14) 50%,rgba(18,72,255,0.09) 72%,transparent 95%)', mixBlendMode:'screen' }} />
+      </div>
 
       {/* Headline — h1 visible; subtext transparent (holds layout + a11y, covered by clip layers) */}
       <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none px-8">

@@ -17,6 +17,7 @@ export interface Translations {
     projects: { name: string; tag: string; url: string }[];
     futureVision: string;
     futureProject: string;
+    letsTalk: string;
   };
 }
 
@@ -64,6 +65,7 @@ const en: Translations = {
     ],
     futureVision: 'Your Vision',
     futureProject: 'Next Project',
+    letsTalk: "Let's Talk",
   },
 };
 
@@ -111,6 +113,7 @@ const es: Translations = {
     ],
     futureVision: 'Tu Visión',
     futureProject: 'Futuro Proyecto',
+    letsTalk: 'Hablemos',
   },
 };
 

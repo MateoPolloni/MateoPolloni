@@ -384,6 +384,7 @@ function FutureCardLogo() {
 /* ─── Future project card ─── */
 
 function FutureProjectCard({ index }: { index: number }) {
+  const { t } = useLanguage();
   const [hovered, setHovered] = useState(false);
 
   return (
@@ -429,7 +430,7 @@ function FutureProjectCard({ index }: { index: number }) {
               transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
               className="inline-flex items-center gap-2.5 font-sans text-[10px] tracking-[0.22em] uppercase text-[#F0EDE8] hover:opacity-50 transition-opacity duration-300"
             >
-              <span className="border-b border-current pb-px">Let&apos;s Talk</span>
+              <span className="border-b border-current pb-px">{t.portfolio.letsTalk}</span>
               <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M1.5 9.5 9.5 1.5M9.5 1.5H3.5M9.5 1.5V7.5" />
               </svg>
