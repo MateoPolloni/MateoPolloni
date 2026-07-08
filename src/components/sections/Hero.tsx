@@ -679,8 +679,6 @@ export default function Hero() {
   const emColor   = useTransform(divider,[43,57],['#d8c480','#b8a8e0']);
   const sbOpacity = useTransform(divider,[43,57],[0.55,1.0]);
   const dtOpacity = useTransform(divider,[43,57],[1.0,0.55]);
-  const divPosR   = useTransform(divider, v => `calc(${v}% - 2px)`);
-  const divPosB   = useTransform(divider, v => `calc(${v}% + 2px)`);
 
   // Glass notes state
   const [notes, setNotes] = useState<NoteItem[]>(INIT_NOTES.map(n=>({...n,alive:true})));
@@ -738,13 +736,7 @@ export default function Hero() {
         />
       </motion.div>
 
-      {/* Chromatic aberration — anamorphic lens split at the world boundary */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{zIndex:6}}>
-        <motion.div style={{ position:'absolute', top:0, bottom:0, left:divPosR, width:'4px', background:'linear-gradient(to bottom,transparent 5%,rgba(255,38,18,0.09) 28%,rgba(255,38,18,0.14) 50%,rgba(255,38,18,0.09) 72%,transparent 95%)', mixBlendMode:'screen' }} />
-        <motion.div style={{ position:'absolute', top:0, bottom:0, left:divPosB, width:'4px', background:'linear-gradient(to bottom,transparent 5%,rgba(18,72,255,0.09) 28%,rgba(18,72,255,0.14) 50%,rgba(18,72,255,0.09) 72%,transparent 95%)', mixBlendMode:'screen' }} />
-      </div>
-
-      {/* Headline — h1 visible; subtext transparent (holds layout + a11y, covered by clip layers) */}
+{/* Headline — h1 visible; subtext transparent (holds layout + a11y, covered by clip layers) */}
       <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none px-8">
         <motion.div
           className="text-center"
