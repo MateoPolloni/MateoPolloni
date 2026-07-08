@@ -1,7 +1,10 @@
 export type Lang = 'en' | 'es';
 
 export interface Translations {
-  nav: { name: string };
+  nav: {
+    name: string;
+    cta: string;
+  };
   hero: {
     eyebrow: string;
     headline: string[];
@@ -14,15 +17,55 @@ export interface Translations {
   portfolio: {
     label: string;
     viewProject: string;
-    projects: { name: string; tag: string; url: string }[];
+    projects: { name: string; tag: string; url: string; description: string }[];
     futureVision: string;
     futureProject: string;
     letsTalk: string;
   };
+  about: {
+    label: string;
+    heading: string[];
+    paragraphs: string[];
+  };
+  services: {
+    label: string;
+    heading: string;
+    tiers: { number: string; name: string; tagline: string; description: string }[];
+    pricing: string;
+  };
+  inquiry: {
+    label: string;
+    heading: string[];
+    fields: {
+      business:     { label: string; placeholder: string };
+      goals:        { label: string; placeholder: string };
+      projectType:  { label: string; options: string[] };
+      branding:     { label: string; options: string[] };
+      admire:       { label: string; placeholder: string };
+      timeline:     { label: string; options: string[] };
+      functionality:{ label: string; placeholder: string };
+      vision:       { label: string; placeholder: string };
+      name:         { label: string; placeholder: string };
+      email:        { label: string; placeholder: string };
+    };
+    submit: string;
+    successTitle: string;
+    successBody: string;
+  };
+  cta: {
+    label: string;
+    heading: string[];
+    sub: string;
+    primary: string;
+    secondary: string;
+  };
 }
 
 const en: Translations = {
-  nav: { name: 'Mateo Polloni' },
+  nav: {
+    name: 'Mateo Polloni',
+    cta: 'Start a Project',
+  },
   hero: {
     eyebrow: 'Web Designer & Developer',
     headline: ['I design websites', 'that feel like', 'something.'],
@@ -56,21 +99,86 @@ const en: Translations = {
         name: 'SoundBuy',
         tag: 'Beat & Track Marketplace',
         url: 'https://soundbuy-ten.vercel.app/',
+        description: "A marketplace where producers and artists connect. The challenge was making something commercial feel creative — the waveform animations and layered purple palette were designed to capture the energy of a late-night studio session.",
       },
       {
         name: 'Dettagli',
         tag: 'Premium Auto Detailing',
         url: 'https://dettagli-six.vercel.app/',
+        description: "A premium detailing service that needed to feel as refined as the cars it services. A 3D Ferrari in a dark, infinite void became the brand statement — not decoration, but identity.",
       },
     ],
     futureVision: 'Your Vision',
     futureProject: 'Next Project',
     letsTalk: "Let's Talk",
   },
+  about: {
+    label: 'About',
+    heading: ['I build websites', 'the way they were', 'meant to feel.'],
+    paragraphs: [
+      "I'm Mateo Polloni — a self-taught web designer and developer who believes the internet deserves better design. Not louder. Not more. Better. More considered. More felt.",
+      "I started building websites because I was frustrated by how little care most digital experiences carry. Typography set without intention. Animations added without purpose. Layouts assembled rather than designed. I decided to work differently.",
+      "I partner with a small number of clients at a time so each project gets the attention it deserves. If you want something people remember and return to — let's talk.",
+    ],
+  },
+  services: {
+    label: 'Services',
+    heading: 'Complete digital experiences.',
+    tiers: [
+      {
+        number: '01',
+        name: 'Landing Page',
+        tagline: 'A strong first impression.',
+        description: "For businesses that need a focused, high-impact online presence. One page, fully custom, designed to convert and impress. Everything a visitor needs to trust you — nothing they don't.",
+      },
+      {
+        number: '02',
+        name: 'Custom Website',
+        tagline: 'Your identity, fully expressed.',
+        description: "My core offering. A multi-page website designed around your brand's unique personality. Custom layouts, refined motion, and an experience that feels unmistakably yours.",
+      },
+      {
+        number: '03',
+        name: 'Signature Experience',
+        tagline: 'The highest level of craft.',
+        description: "For projects that demand something extraordinary. Bespoke interactions, custom motion design, immersive storytelling — and the kind of attention to detail that sets a new benchmark for your category.",
+      },
+    ],
+    pricing: "Projects start at $400. The final investment reflects your project's scope and ambition.",
+  },
+  inquiry: {
+    label: 'Start a Project',
+    heading: ["Let's talk about", 'your project.'],
+    fields: {
+      business:     { label: 'What type of business do you have?',          placeholder: 'My business is...' },
+      goals:        { label: 'What are you hoping to achieve?',              placeholder: "I'm looking to..." },
+      projectType:  { label: 'Is this a new website or a redesign?',        options: ['New website', 'Redesign', 'Not sure yet'] },
+      branding:     { label: 'Do you already have branding?',               options: ['Yes, fully developed', 'Partial', 'Starting from scratch'] },
+      admire:       { label: 'Any websites that inspired you?',             placeholder: 'Optional — e.g. linear.app, stripe.com...' },
+      timeline:     { label: "What's your desired timeline?",               options: ['1–2 months', '3–4 months', '5–6 months', 'Flexible'] },
+      functionality:{ label: 'Any specific functionality you need?',        placeholder: 'Optional — e.g. booking, e-commerce, blog...' },
+      vision:       { label: 'Tell me about your vision.',                  placeholder: 'What does this project mean to you? What should visitors feel?' },
+      name:         { label: 'Your name',                                   placeholder: 'Name' },
+      email:        { label: 'Your email address',                          placeholder: 'email@example.com' },
+    },
+    submit: 'Send Inquiry',
+    successTitle: 'Thank you.',
+    successBody: "I'll be in touch within 48 hours.",
+  },
+  cta: {
+    label: 'Next Step',
+    heading: ["Let's build", 'something together.'],
+    sub: "Tell me about your project. I respond within 48 hours.",
+    primary: 'Start a Project',
+    secondary: 'Send an Email',
+  },
 };
 
 const es: Translations = {
-  nav: { name: 'Mateo Polloni' },
+  nav: {
+    name: 'Mateo Polloni',
+    cta: 'Iniciar Proyecto',
+  },
   hero: {
     eyebrow: 'Diseñador & Desarrollador Web',
     headline: ['Diseño sitios web', 'que transmiten', 'algo.'],
@@ -104,16 +212,78 @@ const es: Translations = {
         name: 'SoundBuy',
         tag: 'Marketplace de Beats y Tracks',
         url: 'https://soundbuy-ten.vercel.app/',
+        description: 'Un marketplace donde productores y artistas se conectan. El desafío era hacer que algo comercial se sintiera creativo: las animaciones de forma de onda y la paleta morada fueron diseñadas para capturar la energía de una sesión de estudio a medianoche.',
       },
       {
         name: 'Dettagli',
         tag: 'Detailing Premium de Autos',
         url: 'https://dettagli-six.vercel.app/',
+        description: 'Un servicio de detailing premium que necesitaba sentirse tan refinado como los autos que atiende. Un Ferrari 3D en un vacío oscuro e infinito se convirtió en la declaración de marca: no como decoración, sino como identidad.',
       },
     ],
     futureVision: 'Tu Visión',
     futureProject: 'Futuro Proyecto',
     letsTalk: 'Hablemos',
+  },
+  about: {
+    label: 'Acerca de',
+    heading: ['Creo sitios web', 'de la manera en que', 'deberían sentirse.'],
+    paragraphs: [
+      'Soy Mateo Polloni — diseñador y desarrollador web autodidacta que cree que internet merece mejor diseño. No más llamativo. No más cargado. Mejor. Más reflexivo. Más sentido.',
+      'Empecé a construir sitios web porque me frustraba la poca atención que la mayoría de las experiencias digitales prestan al detalle. Tipografía sin intención. Animaciones sin propósito. Diseños ensamblados, no diseñados. Decidí trabajar de otra manera.',
+      'Trabajo con un número reducido de clientes a la vez para asegurar que cada proyecto reciba la atención que merece. Si quieres algo que la gente recuerde y a lo que quiera volver — hablemos.',
+    ],
+  },
+  services: {
+    label: 'Servicios',
+    heading: 'Experiencias digitales completas.',
+    tiers: [
+      {
+        number: '01',
+        name: 'Landing Page',
+        tagline: 'Una primera impresión poderosa.',
+        description: 'Para negocios que necesitan una presencia digital enfocada y de alto impacto. Una sola página, completamente personalizada, diseñada para impresionar y convertir. Todo lo que un visitante necesita para confiar en ti — nada más.',
+      },
+      {
+        number: '02',
+        name: 'Sitio Web a Medida',
+        tagline: 'Tu identidad, completamente expresada.',
+        description: "Mi oferta principal. Un sitio web de múltiples páginas diseñado alrededor de la personalidad única de tu marca. Composiciones a medida, movimiento refinado y una experiencia que se siente inequívocamente tuya.",
+      },
+      {
+        number: '03',
+        name: 'Experiencia Signature',
+        tagline: 'El nivel más alto de artesanía.',
+        description: 'Para proyectos que exigen algo extraordinario. Interacciones únicas, diseño de movimiento personalizado, narrativa visual inmersiva — y el nivel de atención al detalle que establece un nuevo estándar para tu categoría.',
+      },
+    ],
+    pricing: 'Los proyectos comienzan desde $400. La inversión final refleja el alcance y la ambición del proyecto.',
+  },
+  inquiry: {
+    label: 'Iniciar Proyecto',
+    heading: ['Cuéntame sobre', 'tu proyecto.'],
+    fields: {
+      business:     { label: '¿Qué tipo de negocio tienes?',                            placeholder: 'Mi negocio es...' },
+      goals:        { label: '¿Qué esperas lograr?',                                    placeholder: 'Estoy buscando...' },
+      projectType:  { label: '¿Es un sitio nuevo o una mejora del actual?',             options: ['Sitio nuevo', 'Rediseño', 'Aún no lo sé'] },
+      branding:     { label: '¿Ya tienes una identidad de marca?',                      options: ['Sí, completamente desarrollada', 'Parcial', 'Desde cero'] },
+      admire:       { label: '¿Hay algún sitio web que te haya inspirado?',             placeholder: 'Opcional — e.g. linear.app, stripe.com...' },
+      timeline:     { label: '¿Cuál es tu plazo deseado?',                              options: ['1–2 meses', '3–4 meses', '5–6 meses', 'Flexible'] },
+      functionality:{ label: '¿Necesitas alguna funcionalidad específica?',             placeholder: 'Opcional — e.g. reservas, e-commerce, blog...' },
+      vision:       { label: 'Cuéntame sobre tu visión.',                               placeholder: '¿Qué significa este proyecto para ti? ¿Qué sensación deberían tener los visitantes?' },
+      name:         { label: 'Tu nombre',                                               placeholder: 'Nombre' },
+      email:        { label: 'Tu dirección de email',                                   placeholder: 'email@ejemplo.com' },
+    },
+    submit: 'Enviar Consulta',
+    successTitle: 'Gracias.',
+    successBody: 'Estaré en contacto en las próximas 48 horas.',
+  },
+  cta: {
+    label: 'Siguiente Paso',
+    heading: ['Construyamos', 'algo juntos.'],
+    sub: 'Cuéntame sobre tu proyecto. Respondo en menos de 48 horas.',
+    primary: 'Iniciar Proyecto',
+    secondary: 'Enviar Email',
   },
 };
 

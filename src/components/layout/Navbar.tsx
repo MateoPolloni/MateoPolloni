@@ -47,9 +47,17 @@ export default function Navbar() {
           {t.nav.name}
         </a>
 
-        <div className="flex items-center gap-6">
-          <LanguageToggle />
-          <ThemeToggle />
+        <div className="flex items-center gap-8">
+          <a
+            href="#inquiry"
+            className="hidden md:inline-flex items-center gap-2 font-sans text-[9px] tracking-[0.28em] uppercase text-[#0A0A0A] dark:text-[#F0EDE8] hover:opacity-50 transition-opacity duration-300"
+          >
+            <span className="border-b border-current pb-px">{t.nav.cta}</span>
+          </a>
+          <div className="flex items-center gap-6">
+            <LanguageToggle />
+            <ThemeToggle />
+          </div>
         </div>
       </div>
     </header>

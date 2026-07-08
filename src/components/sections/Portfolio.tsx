@@ -447,6 +447,7 @@ function FutureProjectCard({ index }: { index: number }) {
 interface ProjectConfig {
   url: string;
   tag: string;
+  description: string;
   CardLogo: React.FC;
   IdleLogo: React.FC;
 }
@@ -472,13 +473,18 @@ function ProjectCard({
       onMouseLeave={() => setHovered(false)}
       className="flex flex-col gap-7"
     >
-      {/* Logo + tag — fixed height so device mockups align across both cards */}
-      <div className="flex flex-col gap-1.5" style={{ minHeight: '64px' }}>
+      {/* Logo + tag */}
+      <div className="flex flex-col gap-1.5">
         <config.CardLogo />
         <span className="font-sans text-[10px] tracking-[0.22em] uppercase text-[#7A7A7A] dark:text-[#6B6B6B]">
           {config.tag}
         </span>
       </div>
+
+      {/* Case study description */}
+      <p className="font-sans text-[13px] leading-[1.75] text-[#7A7A7A] dark:text-[#6B6B6B] max-w-sm -mt-2">
+        {config.description}
+      </p>
 
       {/* Devices */}
       <div className="relative select-none">
@@ -544,12 +550,14 @@ export default function Portfolio() {
     {
       url: t.portfolio.projects[0].url,
       tag: t.portfolio.projects[0].tag,
+      description: t.portfolio.projects[0].description,
       CardLogo: SoundBuyCardLogo,
       IdleLogo: SoundBuyIdleSVG,
     },
     {
       url: t.portfolio.projects[1].url,
       tag: t.portfolio.projects[1].tag,
+      description: t.portfolio.projects[1].description,
       CardLogo: DettagliCardLogo,
       IdleLogo: DettagliIdleSVG,
     },
