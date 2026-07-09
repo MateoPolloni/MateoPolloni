@@ -423,7 +423,7 @@ function FutureProjectCard({ index }: { index: number }) {
         <AnimatePresence>
           {hovered && (
             <motion.a
-              href="mailto:matupoll.com@gmail.com"
+              href="mailto:mateopollonistudio@gmail.com"
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 4 }}
@@ -564,17 +564,20 @@ export default function Portfolio() {
   ];
 
   return (
-    <section className="px-8 md:px-14 py-24 md:py-32 pb-32 md:pb-48">
+    <section className="px-8 md:px-14 py-24 md:py-32 pb-40 md:pb-56">
       <div className="max-w-7xl mx-auto">
-        <motion.p
+        <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="font-sans text-[9px] tracking-[0.32em] uppercase text-[#7A7A7A] dark:text-[#6B6B6B] mb-20 md:mb-24"
+          className="flex items-center gap-4 mb-20 md:mb-28"
         >
-          {t.portfolio.label}
-        </motion.p>
+          <div className="w-5 h-px bg-[#7A7A7A] dark:bg-[#6B6B6B] opacity-40" />
+          <span className="font-sans text-[11px] tracking-[0.22em] uppercase text-[#7A7A7A] dark:text-[#6B6B6B]">
+            {t.portfolio.label}
+          </span>
+        </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-16 md:gap-20">
           {projects.map((config, i) => (

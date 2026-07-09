@@ -105,18 +105,22 @@ export default function Inquiry() {
   return (
     <section
       id="inquiry"
-      className="px-8 md:px-14 py-32 md:py-40 border-t border-black/[0.06] dark:border-white/[0.04]"
+      className="px-8 md:px-14 py-40 md:py-56 border-t border-black/[0.06] dark:border-white/[0.04]"
     >
       <div className="max-w-7xl mx-auto">
-        <motion.p
+        {/* Section label with marker */}
+        <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="font-sans text-[9px] tracking-[0.32em] uppercase text-[#7A7A7A] dark:text-[#6B6B6B] mb-12 md:mb-14"
+          className="flex items-center gap-4 mb-16 md:mb-20"
         >
-          {t.inquiry.label}
-        </motion.p>
+          <div className="w-5 h-px bg-[#7A7A7A] dark:bg-[#6B6B6B] opacity-40" />
+          <span className="font-sans text-[11px] tracking-[0.22em] uppercase text-[#7A7A7A] dark:text-[#6B6B6B]">
+            {t.inquiry.label}
+          </span>
+        </motion.div>
 
         <h2
           className="font-display font-semibold text-[#0A0A0A] dark:text-[#F0EDE8]"
@@ -266,7 +270,7 @@ export default function Inquiry() {
                 <div className="pt-2">
                   {status === 'error' && (
                     <p className="font-sans text-[11px] text-red-500 mb-4">
-                      Something went wrong. Try emailing me directly.
+                      Something went wrong — email me at mateopollonistudio@gmail.com
                     </p>
                   )}
                   <button
