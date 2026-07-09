@@ -3,6 +3,9 @@ export type Lang = 'en' | 'es';
 export interface Translations {
   nav: {
     name: string;
+    work: string;
+    about: string;
+    services: string;
     cta: string;
   };
   hero: {
@@ -26,6 +29,8 @@ export interface Translations {
     label: string;
     heading: string[];
     paragraphs: string[];
+    capabilitiesLabel: string;
+    capabilities: string[];
   };
   services: {
     label: string;
@@ -36,6 +41,11 @@ export interface Translations {
   inquiry: {
     label: string;
     heading: string[];
+    sidebar: {
+      label: string;
+      items: { title: string; body: string }[];
+      note: string;
+    };
     fields: {
       business:     { label: string; placeholder: string };
       goals:        { label: string; placeholder: string };
@@ -64,6 +74,9 @@ export interface Translations {
 const en: Translations = {
   nav: {
     name: 'Mateo Polloni',
+    work: 'Work',
+    about: 'About',
+    services: 'Services',
     cta: 'Start a Project',
   },
   hero: {
@@ -120,6 +133,15 @@ const en: Translations = {
       "I started building websites because I was frustrated by how little care most digital experiences carry. Typography set without intention. Animations added without purpose. Layouts assembled rather than designed. I decided to work differently.",
       "I partner with a small number of clients at a time so each project gets the attention it deserves. If you want something people remember and return to — let's talk.",
     ],
+    capabilitiesLabel: 'What I do',
+    capabilities: [
+      'Custom web design & development',
+      'Motion design & microinteractions',
+      'Brand identity & visual systems',
+      'E-commerce & conversion',
+      'Performance & accessibility',
+      'Bilingual experiences — EN / ES',
+    ],
   },
   services: {
     label: 'Services',
@@ -149,6 +171,24 @@ const en: Translations = {
   inquiry: {
     label: 'Start a Project',
     heading: ["Let's talk about", 'your project.'],
+    sidebar: {
+      label: 'What to expect',
+      items: [
+        {
+          title: 'A response within 24 hours',
+          body: 'I read every inquiry personally and get back to you quickly.',
+        },
+        {
+          title: 'A custom proposal',
+          body: "Not a template — a plan tailored to your project's specific needs and goals.",
+        },
+        {
+          title: 'Direct communication',
+          body: "You work with me directly, start to finish. No middlemen.",
+        },
+      ],
+      note: "I take on a limited number of projects at a time — this means your project gets my full attention. If our goals align, I'll tell you honestly.",
+    },
     fields: {
       business:     { label: 'What type of business do you have?',          placeholder: 'My business is...' },
       goals:        { label: 'What are you hoping to achieve?',              placeholder: "I'm looking to..." },
@@ -177,6 +217,9 @@ const en: Translations = {
 const es: Translations = {
   nav: {
     name: 'Mateo Polloni',
+    work: 'Trabajo',
+    about: 'Acerca de',
+    services: 'Servicios',
     cta: 'Iniciar Proyecto',
   },
   hero: {
@@ -233,6 +276,15 @@ const es: Translations = {
       'Empecé a construir sitios web porque me frustraba la poca atención que la mayoría de las experiencias digitales prestan al detalle. Tipografía sin intención. Animaciones sin propósito. Diseños ensamblados, no diseñados. Decidí trabajar de otra manera.',
       'Trabajo con un número reducido de clientes a la vez para asegurar que cada proyecto reciba la atención que merece. Si quieres algo que la gente recuerde y a lo que quiera volver — hablemos.',
     ],
+    capabilitiesLabel: 'Lo que hago',
+    capabilities: [
+      'Diseño y desarrollo web a medida',
+      'Motion design & microinteracciones',
+      'Identidad de marca y sistemas visuales',
+      'E-commerce y conversión',
+      'Rendimiento y accesibilidad',
+      'Experiencias bilingües — EN / ES',
+    ],
   },
   services: {
     label: 'Servicios',
@@ -262,6 +314,24 @@ const es: Translations = {
   inquiry: {
     label: 'Iniciar Proyecto',
     heading: ['Cuéntame sobre', 'tu proyecto.'],
+    sidebar: {
+      label: 'Qué esperar',
+      items: [
+        {
+          title: 'Una respuesta en 24 horas',
+          body: 'Leo cada consulta personalmente y respondo con rapidez.',
+        },
+        {
+          title: 'Una propuesta personalizada',
+          body: 'No una plantilla — un plan adaptado a las necesidades específicas de tu proyecto.',
+        },
+        {
+          title: 'Comunicación directa',
+          body: 'Trabajas conmigo directamente, de principio a fin. Sin intermediarios.',
+        },
+      ],
+      note: 'Trabajo con un número limitado de proyectos a la vez — esto significa que tu proyecto recibe toda mi atención. Si nuestros objetivos coinciden, te lo diré con honestidad.',
+    },
     fields: {
       business:     { label: '¿Qué tipo de negocio tienes?',                            placeholder: 'Mi negocio es...' },
       goals:        { label: '¿Qué esperas lograr?',                                    placeholder: 'Estoy buscando...' },

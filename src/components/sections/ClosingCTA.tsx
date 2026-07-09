@@ -68,7 +68,7 @@ export default function ClosingCTA() {
           className="flex flex-col sm:flex-row items-center gap-5 sm:gap-8"
         >
           <a
-            href="#inquiry"
+            href="/inquiry"
             className="inline-flex items-center gap-2.5 font-sans text-[10px] tracking-[0.28em] uppercase text-[#F0EDE8] hover:opacity-50 transition-opacity duration-300"
           >
             <span className="border-b border-current pb-px">{t.cta.primary}</span>
