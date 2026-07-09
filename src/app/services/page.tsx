@@ -11,6 +11,7 @@ import {
 } from 'framer-motion';
 import Link from 'next/link';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { useTheme } from '@/lib/ThemeContext';
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
@@ -428,8 +429,12 @@ function ProcessTimeline({ isDark }: { isDark: boolean }) {
 /* ─── Main page ─── */
 export default function ServicesPage() {
   const { t } = useLanguage();
+  const { theme } = useTheme();
   const [active, setActive] = useState(0);
   const isDark = active === 2;
+  // effectiveDark = true whenever the section should show light-on-dark text:
+  // either Signature tier is active (always dark) OR the site is in dark mode
+  const ed = isDark || theme === 'dark';
 
   const canvasRef = useRef<HTMLDivElement>(null);
   const mx  = useMotionValue(0.5);
@@ -484,7 +489,7 @@ export default function ServicesPage() {
       </section>
 
       {/* ── Interactive service explorer ── */}
-      <section className="px-8 md:px-14 py-20 md:py-28 relative overflow-hidden">
+      <section className="px-8 md:px-14 py-20 md:py-28 relative overflow-hidden bg-[#F8F6F1] dark:bg-[#0A0A0A]">
         {/* Dark overlay when Signature active */}
         <AnimatePresence>
           {isDark && (
@@ -508,21 +513,21 @@ export default function ServicesPage() {
                   key={i}
                   onClick={() => setActive(i)}
                   className="text-left relative flex flex-col gap-1.5 py-7 pl-5"
-                  style={{ borderTop: `1px solid ${isDark ? 'rgba(240,237,232,0.07)' : 'rgba(0,0,0,0.07)'}` }}
+                  style={{ borderTop: `1px solid ${ed ? 'rgba(240,237,232,0.07)' : 'rgba(0,0,0,0.07)'}` }}
                 >
                   {/* Active indicator bar */}
                   {active === i && (
                     <motion.div
                       layoutId="activeBar"
                       className="absolute left-0 top-0 bottom-0 w-px"
-                      style={{ backgroundColor: isDark ? ACCENTS_DARK[i] : ACCENTS[i] }}
+                      style={{ backgroundColor: ed ? ACCENTS_DARK[i] : ACCENTS[i] }}
                       transition={{ duration: 0.4, ease }}
                     />
                   )}
 
                   <span
                     className="font-sans text-[9px] tracking-[0.3em] uppercase transition-colors duration-500"
-                    style={{ color: isDark ? 'rgba(240,237,232,0.25)' : 'rgba(0,0,0,0.25)' }}
+                    style={{ color: ed ? 'rgba(240,237,232,0.25)' : 'rgba(0,0,0,0.25)' }}
                   >
                     {tier.number}
                   </span>
@@ -534,8 +539,8 @@ export default function ServicesPage() {
                       letterSpacing: '-0.02em',
                       lineHeight: 1.1,
                       color: active === i
-                        ? (isDark ? ACCENTS_DARK[i] : ACCENTS[i])
-                        : (isDark ? 'rgba(240,237,232,0.2)' : 'rgba(0,0,0,0.2)'),
+                        ? (ed ? ACCENTS_DARK[i] : ACCENTS[i])
+                        : (ed ? 'rgba(240,237,232,0.2)' : 'rgba(0,0,0,0.2)'),
                     }}
                   >
                     {tier.name}
@@ -549,7 +554,7 @@ export default function ServicesPage() {
                         exit={{ opacity: 0, maxHeight: 0 }}
                         transition={{ duration: 0.4, ease }}
                         className="font-sans text-[13px] leading-[1.75] overflow-hidden"
-                        style={{ color: isDark ? 'rgba(240,237,232,0.45)' : 'rgba(0,0,0,0.45)' }}
+                        style={{ color: ed ? 'rgba(240,237,232,0.45)' : 'rgba(0,0,0,0.45)' }}
                       >
                         {tier.description}
                       </motion.p>
@@ -566,7 +571,7 @@ export default function ServicesPage() {
                 className="relative w-full overflow-hidden"
                 style={{
                   aspectRatio: '4/3',
-                  background: isDark ? '#080808' : undefined,
+                  background: isDark ? '#080808' : (theme === 'dark' ? '#111111' : undefined),
                 }}
                 onMouseMove={(e) => {
                   const r = canvasRef.current?.getBoundingClientRect();
@@ -579,14 +584,17 @@ export default function ServicesPage() {
                 {/* Canvas border */}
                 <div
                   className="absolute inset-0 border z-10 pointer-events-none"
-                  style={{ borderColor: isDark ? 'rgba(240,237,232,0.06)' : 'rgba(0,0,0,0.06)' }}
+                  style={{ borderColor: ed ? 'rgba(240,237,232,0.06)' : 'rgba(0,0,0,0.06)' }}
                 />
 
-                {/* Background tint for non-dark states */}
-                {!isDark && (
+                {/* Background tint — Signature canvas handles its own bg */}
+                {active !== 2 && (
                   <motion.div
                     className="absolute inset-0"
-                    animate={{ backgroundColor: active === 0 ? '#F4F2EE' : '#F8F5EC' }}
+                    animate={{ backgroundColor: theme === 'dark'
+                      ? (active === 0 ? '#1A1A1A' : '#161410')
+                      : (active === 0 ? '#F4F2EE' : '#F8F5EC')
+                    }}
                     transition={{ duration: 0.6 }}
                   />
                 )}
@@ -616,8 +624,8 @@ export default function ServicesPage() {
                       transition={{ delay: i * 0.055, duration: 0.35, ease }}
                       className="font-sans text-[9px] tracking-[0.16em] uppercase px-3 py-1.5 border"
                       style={{
-                        borderColor: isDark ? 'rgba(240,237,232,0.1)' : 'rgba(0,0,0,0.08)',
-                        color: isDark ? 'rgba(240,237,232,0.38)' : 'rgba(0,0,0,0.38)',
+                        borderColor: ed ? 'rgba(240,237,232,0.1)' : 'rgba(0,0,0,0.08)',
+                        color: ed ? 'rgba(240,237,232,0.38)' : 'rgba(0,0,0,0.38)',
                       }}
                     >
                       {feat}
@@ -631,7 +639,7 @@ export default function ServicesPage() {
       </section>
 
       {/* ── Process timeline ── */}
-      <ProcessTimeline isDark={isDark} />
+      <ProcessTimeline isDark={ed} />
 
       {/* ── Dark CTA ── */}
       <section className="px-8 md:px-14 py-40 md:py-56 bg-[#0a0a0a] text-center">
