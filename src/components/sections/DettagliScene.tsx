@@ -59,8 +59,8 @@ const CALLOUTS: CalloutDef[] = [
   },
 ];
 
-/* Camera pulled well back — car fits elegantly in the right half */
-const DEFAULT_CAM = { px: 6.2, py: 1.65, pz: -7.0, lx: 0.0, ly: 0.62, lz: 0.2 };
+/* lx:0.8 keeps the car projected into the visible right-50% clip */
+const DEFAULT_CAM = { px: 5.2, py: 1.38, pz: -5.5, lx: 0.8, ly: 0.56, lz: 0 };
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 /* Slow cinematic spring — no jump, pure glide */
@@ -176,11 +176,11 @@ export default function DettagliScene({ mouseRef }: { mouseRef: React.MutableRef
       camera.position.set(DEFAULT_CAM.px, DEFAULT_CAM.py, DEFAULT_CAM.pz);
       camera.lookAt(DEFAULT_CAM.lx, DEFAULT_CAM.ly, DEFAULT_CAM.lz);
 
-      /* FLOOR — near-black epoxy, specular-only reflections */
+      /* FLOOR — near-black epoxy; rougher clearcoat eliminates mirror hotspot */
       const floorMat = new THREE.MeshPhysicalMaterial({
-        color: '#0A0910', roughness: 0.05, metalness: 0.0,
-        clearcoat: 1.0, clearcoatRoughness: 0.04, reflectivity: 0.90,
-        envMapIntensity: 0.45,
+        color: '#060510', roughness: 0.08, metalness: 0.0,
+        clearcoat: 0.85, clearcoatRoughness: 0.24, reflectivity: 0.70,
+        envMapIntensity: 0.30,
       });
       const floor = new THREE.Mesh(new THREE.PlaneGeometry(36, 36), floorMat);
       floor.rotation.x = -Math.PI / 2;
@@ -326,9 +326,9 @@ export default function DettagliScene({ mouseRef }: { mouseRef: React.MutableRef
       /* LIGHTING */
       scene.add(new THREE.AmbientLight('#C4BCB0', 0.022));
 
-      // Primary key from directly above — tight cone, creates pool of light on car
-      const key = new THREE.SpotLight('#FFF6E8', 3.4, 18, 0.26, 0.52, 1.3);
-      key.position.set(0.4, 8.5, 0.5); key.target.position.set(0.2, 0.45, 0.3);
+      // Primary key from directly above — tight cone, pool of light on car, not floor
+      const key = new THREE.SpotLight('#FFF6E8', 2.8, 18, 0.24, 0.50, 1.4);
+      key.position.set(0.5, 9.2, 0.8); key.target.position.set(0.2, 0.52, 0.3);
       key.castShadow = true; key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -0.00008; key.shadow.radius = 7;
       scene.add(key, key.target);
 
