@@ -210,17 +210,9 @@ export default function Hero() {
     return ()=>{ window.removeEventListener('mousemove',onMove); window.removeEventListener('touchmove',onTouch); };
   },[mx,my]);
 
-  // Spring divider
-  const rawDiv = useTransform(mx,[0,1],[43,57]);
-  const divider = useSpring(rawDiv,{stiffness:38,damping:19,mass:1.2});
-  const leftClip  = useTransform(divider,v=>`polygon(0 0, ${v}% 0, ${v}% 100%, 0 100%)`);
-  const rightClip = useTransform(divider,v=>`polygon(${v}% 0, 100% 0, 100% 100%, ${v}% 100%)`);
-  const divPos    = useTransform(divider,v=>`${v}%`);
-  const textX = useTransform(mx,[0,1],[7,-7]);
-  const textY = useTransform(my,[0,1],[3.5,-3.5]);
-  const emColor   = useTransform(divider,[43,57],['#d8c480','#b8a8e0']);
-  const sbOpacity = useTransform(divider,[43,57],[0.55,1.0]);
-  const dtOpacity = useTransform(divider,[43,57],[1.0,0.55]);
+  // Light parallax on headline only
+  const textX = useTransform(mx,[0,1],[5,-5]);
+  const textY = useTransform(my,[0,1],[2.5,-2.5]);
 
   // Glass notes state
   const [notes, setNotes] = useState<NoteItem[]>(INIT_NOTES.map(n=>({...n,alive:true})));
@@ -230,9 +222,7 @@ export default function Hero() {
     setNotes(prev=>prev.map(n=>n.id===id?{...n,alive:false}:n));
     setBursts(prev=>[...prev,{id:`${id}-${Date.now()}`,x,y}]);
     playTone(INIT_NOTES.find(n=>n.id===id)?.freq??440);
-    // Remove burst after animation
     setTimeout(()=>setBursts(prev=>prev.filter(b=>!b.id.startsWith(id))),1200);
-    // Respawn note after delay
     setTimeout(()=>setNotes(prev=>prev.map(n=>n.id===id?{...n,alive:true,xPct:8+Math.random()*32,yPct:10+Math.random()*70}:n)),3500);
   },[]);
 
@@ -242,102 +232,59 @@ export default function Hero() {
       style={{height:'calc(100dvh - 4rem)',minHeight:'560px'}}
       initial={{opacity:0,scale:0.995}} animate={{opacity:1,scale:1}} transition={{duration:1.4,ease:[0.16,1,0.3,1]}}
     >
-      {/* SoundBuy world */}
-      <motion.div className="absolute inset-0" style={{clipPath:leftClip,background:'#06060a'}}>
+      {/* SoundBuy — fixed left 50% */}
+      <div className="absolute inset-0" style={{clipPath:'polygon(0 0,50% 0,50% 100%,0 100%)',background:'#06060a'}}>
         <SoundBuyCanvas mouseRef={mouseRef} />
         <AnimatePresence>
-          {notes.map(note=>(
-            <FloatingNote key={note.id} note={note} onBurst={handleBurst} />
-          ))}
+          {notes.map(note=>(<FloatingNote key={note.id} note={note} onBurst={handleBurst} />))}
         </AnimatePresence>
-      </motion.div>
+      </div>
 
-      {/* Dettagli world — pointer-events:none, clicks fall through */}
-      <motion.div className="absolute inset-0" style={{clipPath:rightClip,pointerEvents:'none'}}>
+      {/* Dettagli — fixed right 50%; container has no pointer events, labels opt in */}
+      <div className="absolute inset-0" style={{clipPath:'polygon(50% 0,100% 0,100% 100%,50% 100%)',pointerEvents:'none'}}>
         <DettagliScene mouseRef={mouseRef} />
-      </motion.div>
+      </div>
 
-      {/* Burst particles (fixed, above everything) */}
+      {/* Burst particles */}
       <AnimatePresence>
         {bursts.map(b=><BurstEffect key={b.id} x={b.x} y={b.y} />)}
       </AnimatePresence>
 
-      {/* Divider */}
-      <motion.div
+      {/* Fixed center divider */}
+      <div
         className="absolute top-0 bottom-0 w-px pointer-events-none"
         style={{
-          left:divPos,
-          background:'linear-gradient(to bottom, transparent 4%, rgba(255,255,255,.08) 26%, rgba(255,255,255,.2) 50%, rgba(255,255,255,.08) 74%, transparent 96%)',
-          boxShadow:'0 0 10px rgba(255,255,255,.04), 0 0 28px rgba(255,255,255,.02)',
+          left:'50%',
+          background:'linear-gradient(to bottom,transparent 4%,rgba(255,255,255,.06) 26%,rgba(255,255,255,.14) 50%,rgba(255,255,255,.06) 74%,transparent 96%)',
         }}
       />
 
-{/* Headline — h1 visible; subtext transparent (holds layout + a11y, covered by clip layers) */}
+      {/* Headline */}
       <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none px-8">
         <motion.div
           className="text-center"
           style={{x:textX,y:textY}}
           initial={{opacity:0,y:18,filter:'blur(4px)'}} animate={{opacity:1,y:0,filter:'blur(0px)'}}
-          transition={{duration:1.35,delay:0.4,ease:[0.16,1,0.3,1]}}
+          transition={{duration:1.4,delay:0.45,ease:[0.16,1,0.3,1]}}
         >
-          <h1 style={{fontFamily:'var(--font-display)',fontWeight:600,fontSize:'clamp(36px, 5.6vw, 90px)',lineHeight:1.1,letterSpacing:'-0.03em',color:'#F0EDE8'}}>
+          <h1 style={{fontFamily:'var(--font-display)',fontWeight:600,fontSize:'clamp(36px,5.6vw,90px)',lineHeight:1.1,letterSpacing:'-0.03em',color:'#F0EDE8'}}>
             {lang==='en'?(
-              <>I design websites<br/>that{' '}<motion.em style={{fontFamily:'var(--font-cormorant)',fontStyle:'italic',fontWeight:300,letterSpacing:'0.01em',color:emColor}}>feel</motion.em>{' '}like something.</>
+              <>I design websites<br/>that{' '}<em style={{fontFamily:'var(--font-cormorant)',fontStyle:'italic',fontWeight:300,letterSpacing:'0.01em',color:'#c8a84e'}}>feel</em>{' '}like something.</>
             ):(
-              <>Diseño sitios web<br/>que{' '}<motion.em style={{fontFamily:'var(--font-cormorant)',fontStyle:'italic',fontWeight:300,letterSpacing:'0.01em',color:emColor}}>transmiten</motion.em>{' '}algo.</>
+              <>Diseño sitios web<br/>que{' '}<em style={{fontFamily:'var(--font-cormorant)',fontStyle:'italic',fontWeight:300,letterSpacing:'0.01em',color:'#c8a84e'}}>transmiten</em>{' '}algo.</>
             )}
           </h1>
-          <p style={{margin:'1.4rem auto 0',fontFamily:'var(--font-sans)',fontSize:'clamp(12px, 1.05vw, 15px)',lineHeight:1.75,letterSpacing:'0.01em',color:'rgba(240,237,232,0.68)',maxWidth:'360px'}}>
+          <p style={{margin:'1.4rem auto 0',fontFamily:'var(--font-sans)',fontSize:'clamp(12px,1.05vw,15px)',lineHeight:1.75,letterSpacing:'0.01em',color:'rgba(240,237,232,0.62)',maxWidth:'360px'}}>
             {t.hero.sub}
           </p>
         </motion.div>
       </div>
 
-      {/* Subtext — SoundBuy purple, clipped to left world.
-          inset-0 container = same coordinate space as leftClip, so % aligns pixel-perfectly. */}
-      <motion.div
-        className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none px-8"
-        style={{clipPath:leftClip}}
-        aria-hidden="true"
-      >
-        <motion.div className="text-center" style={{x:textX,y:textY}}
-          initial={{opacity:0,y:18,filter:'blur(4px)'}} animate={{opacity:1,y:0,filter:'blur(0px)'}}
-          transition={{duration:1.35,delay:0.4,ease:[0.16,1,0.3,1]}}
-        >
-          <h1 style={{visibility:'hidden',fontFamily:'var(--font-display)',fontWeight:600,fontSize:'clamp(36px, 5.6vw, 90px)',lineHeight:1.1,letterSpacing:'-0.03em'}}>
-            {lang==='en'?(<>I design websites<br/>that{' '}<em style={{fontFamily:'var(--font-cormorant)',fontStyle:'italic',fontWeight:300,letterSpacing:'0.01em'}}>feel</em>{' '}like something.</>):(<>Diseño sitios web<br/>que{' '}<em style={{fontFamily:'var(--font-cormorant)',fontStyle:'italic',fontWeight:300,letterSpacing:'0.01em'}}>transmiten</em>{' '}algo.</>)}
-          </h1>
-          <p style={{margin:'1.4rem auto 0',fontFamily:'var(--font-sans)',fontSize:'clamp(12px, 1.05vw, 15px)',lineHeight:1.75,letterSpacing:'0.01em',maxWidth:'360px',color:'transparent'}}>
-            {t.hero.sub}
-          </p>
-        </motion.div>
-      </motion.div>
-
-      {/* Subtext — Dettagli warm ivory-to-gold, clipped to right world */}
-      <motion.div
-        className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none px-8"
-        style={{clipPath:rightClip}}
-        aria-hidden="true"
-      >
-        <motion.div className="text-center" style={{x:textX,y:textY}}
-          initial={{opacity:0,y:18,filter:'blur(4px)'}} animate={{opacity:1,y:0,filter:'blur(0px)'}}
-          transition={{duration:1.35,delay:0.4,ease:[0.16,1,0.3,1]}}
-        >
-          <h1 style={{visibility:'hidden',fontFamily:'var(--font-display)',fontWeight:600,fontSize:'clamp(36px, 5.6vw, 90px)',lineHeight:1.1,letterSpacing:'-0.03em'}}>
-            {lang==='en'?(<>I design websites<br/>that{' '}<em style={{fontFamily:'var(--font-cormorant)',fontStyle:'italic',fontWeight:300,letterSpacing:'0.01em'}}>feel</em>{' '}like something.</>):(<>Diseño sitios web<br/>que{' '}<em style={{fontFamily:'var(--font-cormorant)',fontStyle:'italic',fontWeight:300,letterSpacing:'0.01em'}}>transmiten</em>{' '}algo.</>)}
-          </h1>
-          <p style={{margin:'1.4rem auto 0',fontFamily:'var(--font-sans)',fontSize:'clamp(12px, 1.05vw, 15px)',lineHeight:1.75,letterSpacing:'0.01em',maxWidth:'360px',color:'transparent'}}>
-            {t.hero.sub}
-          </p>
-        </motion.div>
-      </motion.div>
-
-      {/* Bottom bar */}
+      {/* Bottom labels */}
       <div className="absolute inset-x-0 bottom-0 z-10 flex items-end justify-between px-10 md:px-14 pb-9 pointer-events-none">
 
-        {/* SoundBuy label */}
         <motion.div initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{duration:.9,delay:.85,ease:[.16,1,.3,1]}}>
-          <motion.div className="flex flex-col gap-2.5 pointer-events-auto" style={{opacity:sbOpacity}}>
+          <div className="flex flex-col gap-2.5 pointer-events-auto">
             <div className="flex items-center gap-2">
               <svg width="18" height="13" viewBox="0 0 18 13" fill="none" aria-hidden="true">
                 {([[3,4],[6,8],[9,13],[12,8],[15,4]] as [number,number][]).map(([x,h],i)=>(
@@ -357,25 +304,11 @@ export default function Hero() {
               Explore Project
               <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M1.5 8.5 8.5 1.5M8.5 1.5H3M8.5 1.5V7"/></svg>
             </a>
-          </motion.div>
+          </div>
         </motion.div>
 
-        {/* Center hint */}
-        <motion.div className="flex flex-col items-center gap-2 pb-0.5" initial={{opacity:0}} animate={{opacity:1}} transition={{duration:1,delay:1.6}}>
-          <motion.div
-            style={{display:'flex',gap:'18px',alignItems:'center'}}
-            animate={{opacity:[0.28,0.58,0.28]}}
-            transition={{duration:3.5,repeat:Infinity,ease:'easeInOut'}}
-          >
-            <span style={{fontSize:'11px',color:'rgba(240,237,232,0.9)',fontFamily:'monospace',lineHeight:1}}>‹</span>
-            <span style={{fontSize:'11px',color:'rgba(240,237,232,0.9)',fontFamily:'monospace',lineHeight:1}}>›</span>
-          </motion.div>
-          <div className="w-px h-5" style={{background:'linear-gradient(to bottom,rgba(240,237,232,.18),transparent)'}}/>
-        </motion.div>
-
-        {/* Dettagli label */}
         <motion.div initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{duration:.9,delay:1.0,ease:[.16,1,.3,1]}}>
-          <motion.div className="flex flex-col gap-2.5 items-end pointer-events-auto" style={{opacity:dtOpacity}}>
+          <div className="flex flex-col gap-2.5 items-end pointer-events-auto">
             <span style={{fontFamily:"'Cormorant',serif",fontWeight:500,fontSize:'16px',letterSpacing:'0.15em',color:'#f2f1ed',textTransform:'uppercase'}}>
               DETTAGLI
             </span>
@@ -388,7 +321,7 @@ export default function Hero() {
               Explore Project
               <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M1.5 8.5 8.5 1.5M8.5 1.5H3M8.5 1.5V7"/></svg>
             </a>
-          </motion.div>
+          </div>
         </motion.div>
       </div>
     </motion.section>
