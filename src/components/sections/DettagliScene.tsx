@@ -59,8 +59,8 @@ const CALLOUTS: CalloutDef[] = [
   },
 ];
 
-/* lx:1.6 shifts the car into the center of the visible right-50% clip */
-const DEFAULT_CAM = { px: 5.2, py: 1.38, pz: -5.5, lx: 1.6, ly: 0.56, lz: 0 };
+/* lx:2.8 — camera aimed well right of car so car sits in center of Dettagli half */
+const DEFAULT_CAM = { px: 5.5, py: 1.42, pz: -5.5, lx: 2.8, ly: 0.55, lz: 0 };
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 /* Slow cinematic spring — no jump, pure glide */
@@ -176,11 +176,9 @@ export default function DettagliScene({ mouseRef }: { mouseRef: React.MutableRef
       camera.position.set(DEFAULT_CAM.px, DEFAULT_CAM.py, DEFAULT_CAM.pz);
       camera.lookAt(DEFAULT_CAM.lx, DEFAULT_CAM.ly, DEFAULT_CAM.lz);
 
-      /* FLOOR — near-black epoxy; rougher clearcoat eliminates mirror hotspot */
-      const floorMat = new THREE.MeshPhysicalMaterial({
-        color: '#060510', roughness: 0.08, metalness: 0.0,
-        clearcoat: 0.85, clearcoatRoughness: 0.24, reflectivity: 0.70,
-        envMapIntensity: 0.30,
+      /* FLOOR — dark matte surface, no clearcoat, no hotspot */
+      const floorMat = new THREE.MeshStandardMaterial({
+        color: '#080812', roughness: 0.78, metalness: 0.0,
       });
       const floor = new THREE.Mesh(new THREE.PlaneGeometry(36, 36), floorMat);
       floor.rotation.x = -Math.PI / 2;
