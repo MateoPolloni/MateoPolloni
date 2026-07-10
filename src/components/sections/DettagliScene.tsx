@@ -59,8 +59,8 @@ const CALLOUTS: CalloutDef[] = [
   },
 ];
 
-/* lx:0.8 keeps the car projected into the visible right-50% clip */
-const DEFAULT_CAM = { px: 5.2, py: 1.38, pz: -5.5, lx: 0.8, ly: 0.56, lz: 0 };
+/* lx:1.6 shifts the car into the center of the visible right-50% clip */
+const DEFAULT_CAM = { px: 5.2, py: 1.38, pz: -5.5, lx: 1.6, ly: 0.56, lz: 0 };
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 /* Slow cinematic spring — no jump, pure glide */
