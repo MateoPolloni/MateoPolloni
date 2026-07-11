@@ -59,8 +59,8 @@ const CALLOUTS: CalloutDef[] = [
   },
 ];
 
-/* lx:-0.5, lz:3.0 — camera looks deep into garage toward left-rear corner, car projects to ~78% canvas */
-const DEFAULT_CAM = { px: 5.5, py: 1.6, pz: -5.5, lx: -0.5, ly: 0.55, lz: 3.0 };
+/* px:3.5 inside garage (right wall at x=4.20), lz:3.0 looks toward back wall — car at ~79% canvas */
+const DEFAULT_CAM = { px: 3.5, py: 1.6, pz: -4.0, lx: 0.5, ly: 0.55, lz: 3.0 };
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 /* Slow cinematic spring — no jump, pure glide */
@@ -170,7 +170,7 @@ export default function DettagliScene({ mouseRef }: { mouseRef: React.MutableRef
       /* SCENE */
       const scene = new THREE.Scene();
       scene.background = new THREE.Color('#07080A');
-      scene.fog = new THREE.Fog('#07080A', 7, 24);
+      scene.fog = new THREE.Fog('#07080A', 6, 18);
 
       const camera = new THREE.PerspectiveCamera(34, W / H, 0.1, 80);
       camera.position.set(DEFAULT_CAM.px, DEFAULT_CAM.py, DEFAULT_CAM.pz);
