@@ -59,8 +59,8 @@ const CALLOUTS: CalloutDef[] = [
   },
 ];
 
-/* px:3.5 inside garage (right wall at x=4.20), lz:3.0 looks toward back wall — car at ~79% canvas */
-const DEFAULT_CAM = { px: 3.5, py: 1.6, pz: -4.0, lx: 0.5, ly: 0.55, lz: 3.0 };
+/* garage rotated 180°: back wall now at z=+4.53, right wall at x=+3.33, camera inside at x=2.5 */
+const DEFAULT_CAM = { px: 2.5, py: 1.6, pz: -4.0, lx: 0.5, ly: 0.55, lz: 3.5 };
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 /* Slow cinematic spring — no jump, pure glide */
@@ -338,6 +338,8 @@ export default function DettagliScene({ mouseRef }: { mouseRef: React.MutableRef
         /* ── GARAGE ── */
         const garageModel = garageGltf.scene as ThreeNS.Object3D;
         // Garage floor in model space is at y≈-0.84 — lift so it sits at world y=0
+        // Rotate 180° so the solid back wall faces the camera (entrance was facing camera before)
+        garageModel.rotation.y = Math.PI;
         garageModel.position.set(0, 0.84, 0);
         garageModel.traverse((child: ThreeNS.Object3D) => {
           const mesh = child as ThreeNS.Mesh;
