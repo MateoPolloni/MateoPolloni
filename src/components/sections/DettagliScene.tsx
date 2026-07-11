@@ -19,7 +19,7 @@ interface CalloutDef {
 const CALLOUTS: CalloutDef[] = [
   {
     id: 'glass',
-    worldPos: [0.55, 1.06, 0.6],  camPos: [1.0, 1.95, 2.6],  camLook: [0.3, 0.96, 0.5],
+    worldPos: [0.55, 1.13, 0.6],  camPos: [1.0, 1.95, 2.6],  camLook: [0.3, 0.96, 0.5],
     lox: 74, loy: -90,
     title: 'Glass Treatment', tag: 'Hydrophobic · Anti-UV',
     body:  'Water sheets off at 50 mph. UV fully blocked. Every pane clarity-polished before nano-ceramic is applied — inside and out. Visibility redefined.',
@@ -27,7 +27,7 @@ const CALLOUTS: CalloutDef[] = [
   },
   {
     id: 'hood',
-    worldPos: [0.55, 0.90, 1.35], camPos: [1.2, 2.2, 3.6],   camLook: [0.4, 0.82, 1.0],
+    worldPos: [0.55, 0.97, 1.35], camPos: [1.2, 2.2, 3.6],   camLook: [0.4, 0.82, 1.0],
     lox: 84, loy: -56,
     title: 'Ceramic Coating', tag: '9H Hardness · 5-Year Bond',
     body:  'A molecular bond that becomes part of your paint. Total resistance to UV, chemicals, and micro-scratches — with a depth of gloss no wax can approach.',
@@ -35,7 +35,7 @@ const CALLOUTS: CalloutDef[] = [
   },
   {
     id: 'interior',
-    worldPos: [0.0, 0.78, 0.15],  camPos: [0.6, 3.4, -0.1],  camLook: [0.0, 0.52, 0.0],
+    worldPos: [0.0, 0.85, 0.15],  camPos: [0.6, 3.4, -0.1],  camLook: [0.0, 0.52, 0.0],
     lox: 102, loy: 4,
     title: 'Interior Detail', tag: 'Full Cabin · Every Surface',
     body:  'Alcantara, leather, carbon — each treated by its own protocol. Sanitised, conditioned, UV-protected from seat to headliner.',
@@ -43,7 +43,7 @@ const CALLOUTS: CalloutDef[] = [
   },
   {
     id: 'body',
-    worldPos: [0.88, 0.74, -0.35], camPos: [2.8, 1.5, -2.4], camLook: [0.4, 0.62, -0.5],
+    worldPos: [0.88, 0.81, -0.35], camPos: [2.8, 1.5, -2.4], camLook: [0.4, 0.62, -0.5],
     lox: 82, loy: 30,
     title: 'Paint Correction', tag: 'Single to Multi-Stage',
     body:  'Swirl marks, water etch, oxidation — removed at the molecular level. The surface becomes what it was the day it left the factory.',
@@ -51,7 +51,7 @@ const CALLOUTS: CalloutDef[] = [
   },
   {
     id: 'wheel',
-    worldPos: [1.02, 0.27, 1.35], camPos: [2.8, 0.68, 2.9],  camLook: [0.9, 0.26, 1.3],
+    worldPos: [1.02, 0.34, 1.35], camPos: [2.8, 0.68, 2.9],  camLook: [0.9, 0.26, 1.3],
     lox: 62, loy: 72,
     title: 'Tire Dressing', tag: 'Iron Fallout · Caliper Seal',
     body:  'Brake dust and iron fallout chemically dissolved. Calipers colour-sealed. Tires dressed to a deep rich matte — not the synthetic shine that wears off overnight.',
@@ -59,8 +59,8 @@ const CALLOUTS: CalloutDef[] = [
   },
 ];
 
-/* lx:2.8 — camera aimed well right of car so car sits in center of Dettagli half */
-const DEFAULT_CAM = { px: 5.5, py: 1.42, pz: -5.5, lx: 2.8, ly: 0.55, lz: 0 };
+/* lx:-0.5, lz:3.0 — camera looks deep into garage toward left-rear corner, car projects to ~78% canvas */
+const DEFAULT_CAM = { px: 5.5, py: 1.6, pz: -5.5, lx: -0.5, ly: 0.55, lz: 3.0 };
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 /* Slow cinematic spring — no jump, pure glide */
@@ -176,16 +176,6 @@ export default function DettagliScene({ mouseRef }: { mouseRef: React.MutableRef
       camera.position.set(DEFAULT_CAM.px, DEFAULT_CAM.py, DEFAULT_CAM.pz);
       camera.lookAt(DEFAULT_CAM.lx, DEFAULT_CAM.ly, DEFAULT_CAM.lz);
 
-      /* SHADOW RECEIVER FLOOR — invisible plane, only receives shadows from car */
-      const shadowFloor = new THREE.Mesh(
-        new THREE.PlaneGeometry(20, 20),
-        new THREE.ShadowMaterial({ opacity: 0.35 }),
-      );
-      shadowFloor.rotation.x = -Math.PI / 2;
-      shadowFloor.position.y = 0.001;
-      shadowFloor.receiveShadow = true;
-      scene.add(shadowFloor);
-
       /* LIGHTING */
       scene.add(new THREE.AmbientLight('#C4BCB0', 0.028));
 
@@ -214,6 +204,11 @@ export default function DettagliScene({ mouseRef }: { mouseRef: React.MutableRef
       const fill = new THREE.SpotLight('#FFF4EC', 0.45, 12, 0.6, 0.9, 2.0);
       fill.position.set(-1.5, 2.8, -3.5); fill.target.position.set(0, 1.0, 0.5);
       scene.add(fill, fill.target);
+
+      // Back-left wall accent — illuminates the corner depth visible in Dettagli panel
+      const wallAcc = new THREE.SpotLight('#FFE8D0', 0.55, 20, 0.65, 0.95);
+      wallAcc.position.set(-1.5, 5.5, 7.5); wallAcc.target.position.set(-1.5, 0.5, 5.0);
+      scene.add(wallAcc, wallAcc.target);
 
       const { RectAreaLightUniformsLib } = await import('three/examples/jsm/lights/RectAreaLightUniformsLib.js');
       if (disposed) return;
@@ -388,7 +383,7 @@ export default function DettagliScene({ mouseRef }: { mouseRef: React.MutableRef
         if (!doorMeshRef.current) {
           model.traverse((child: ThreeNS.Object3D) => { if (!doorMeshRef.current && child.name.toLowerCase().includes('door')) doorMeshRef.current = child; });
         }
-        model.position.set(0, 0.08, 0);
+        model.position.set(0, 0.15, 0);
         scene.add(model);
         draco.dispose();
         setReady(true);
