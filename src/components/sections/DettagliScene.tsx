@@ -169,162 +169,27 @@ export default function DettagliScene({ mouseRef }: { mouseRef: React.MutableRef
 
       /* SCENE */
       const scene = new THREE.Scene();
-      scene.background = new THREE.Color('#070605');
-      scene.fog = new THREE.Fog('#070605', 6, 22);
+      scene.background = new THREE.Color('#07080A');
+      scene.fog = new THREE.Fog('#07080A', 7, 24);
 
       const camera = new THREE.PerspectiveCamera(34, W / H, 0.1, 80);
       camera.position.set(DEFAULT_CAM.px, DEFAULT_CAM.py, DEFAULT_CAM.pz);
       camera.lookAt(DEFAULT_CAM.lx, DEFAULT_CAM.ly, DEFAULT_CAM.lz);
 
-      /* FLOOR — dark matte surface, no clearcoat, no hotspot */
-      const floorMat = new THREE.MeshStandardMaterial({
-        color: '#080812', roughness: 0.78, metalness: 0.0,
-      });
-      const floor = new THREE.Mesh(new THREE.PlaneGeometry(36, 36), floorMat);
-      floor.rotation.x = -Math.PI / 2;
-      floor.receiveShadow = true;
-      scene.add(floor);
-      cleanups.push(() => floorMat.dispose());
-
-      /* FLOOR ZONE LINES — subtle positioning marks */
-      const lineMat = new THREE.MeshStandardMaterial({ color: '#161428' });
-      for (const [gw, gh, px, pz] of [[6.2, 0.03, 0, 2.8], [6.2, 0.03, 0, -2.8], [0.03, 5.8, 2.8, 0], [0.03, 5.8, -2.8, 0]] as const) {
-        const m = new THREE.Mesh(new THREE.PlaneGeometry(gw, gh), lineMat);
-        m.rotation.x = -Math.PI / 2; m.position.set(px, 0.002, pz); scene.add(m);
-      }
-      cleanups.push(() => lineMat.dispose());
-
-      /* STUDIO ROOM — DoubleSide planes so facing direction doesn't matter */
-      const wallMat = new THREE.MeshStandardMaterial({ color: '#0E0C0A', roughness: 0.97, side: THREE.DoubleSide });
-      const dadoMat = new THREE.MeshStandardMaterial({ color: '#090807', roughness: 0.99, side: THREE.DoubleSide });
-      const ceilMat = new THREE.MeshStandardMaterial({ color: '#080706', roughness: 0.99, side: THREE.DoubleSide });
-
-      // Back wall — behind the car as seen from camera (camera looks in +z direction, car at z=0, back wall at z=11)
-      const bkWall = new THREE.Mesh(new THREE.PlaneGeometry(26, 12), wallMat);
-      bkWall.position.set(-2, 5, 11); bkWall.receiveShadow = true; scene.add(bkWall);
-      const bkDado = new THREE.Mesh(new THREE.PlaneGeometry(26, 1.5), dadoMat);
-      bkDado.position.set(-2, 0.75, 10.9); scene.add(bkDado);
-
-      // Left wall (appears in left portion of frame — camera looks -x so left of image = high x world, but "left wall" = low x world)
-      // Camera at x=6.2 looking at x=0: x=-10 is far left in world = far right in image
-      // We want something to enclose the far left in world
-      const lWall = new THREE.Mesh(new THREE.PlaneGeometry(24, 12), wallMat);
-      lWall.position.set(-10, 5, 2); lWall.rotation.y = Math.PI / 2; lWall.receiveShadow = true; scene.add(lWall);
-      const lDado = new THREE.Mesh(new THREE.PlaneGeometry(24, 1.5), dadoMat);
-      lDado.position.set(-9.9, 0.75, 2); lDado.rotation.y = Math.PI / 2; scene.add(lDado);
-
-      // Right wall (camera side — mostly out of frame, but encloses space)
-      const rWall = new THREE.Mesh(new THREE.PlaneGeometry(24, 12), wallMat);
-      rWall.position.set(10, 5, 2); rWall.rotation.y = -Math.PI / 2; scene.add(rWall);
-
-      // Front wall (far in -z, behind camera — needed for enclosure, not visible)
-      const fWall = new THREE.Mesh(new THREE.PlaneGeometry(24, 12), wallMat);
-      fWall.position.set(-2, 5, -12); scene.add(fWall);
-
-      // Ceiling
-      const ceil = new THREE.Mesh(new THREE.PlaneGeometry(26, 26), ceilMat);
-      ceil.position.set(0, 10, 2); ceil.rotation.x = Math.PI / 2; scene.add(ceil);
-      cleanups.push(() => { wallMat.dispose(); dadoMat.dispose(); ceilMat.dispose(); });
-
-      /* DADO RAIL — polished metal accent strip */
-      const railMat = new THREE.MeshPhysicalMaterial({ color: '#222020', roughness: 0.32, metalness: 0.78, clearcoat: 0.7, side: THREE.DoubleSide });
-      const rail1 = new THREE.Mesh(new THREE.BoxGeometry(26, 0.04, 0.04), railMat);
-      rail1.position.set(-2, 1.45, 10.88); scene.add(rail1);
-      const rail2 = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 24), railMat);
-      rail2.position.set(-9.86, 1.45, 2); scene.add(rail2);
-      cleanups.push(() => railMat.dispose());
-
-      /* CEILING LIGHTING TRACK */
-      const trackMat = new THREE.MeshPhysicalMaterial({ color: '#1C1A18', roughness: 0.48, metalness: 0.85 });
-      const headMat  = new THREE.MeshPhysicalMaterial({ color: '#242220', roughness: 0.38, metalness: 0.80, emissive: new THREE.Color('#FFF8E0'), emissiveIntensity: 0.18 });
-      const tGeo = new THREE.BoxGeometry(10, 0.07, 0.12);
-      [[0, 10.1, 0.2, 0], [0, 10.1, 2.6, 0]].forEach(([x, y, z]) => {
-        const t = new THREE.Mesh(tGeo, trackMat); t.position.set(x, y, z); scene.add(t);
-      });
-      const hGeo = new THREE.CylinderGeometry(0.09, 0.07, 0.24, 8);
-      [[-3.5, 0.2], [-1.5, 0.2], [0.5, 0.2], [2.5, 0.2], [-2.5, 2.6], [0, 2.6], [2.0, 2.6]].forEach(([x, z]) => {
-        const h = new THREE.Mesh(hGeo, headMat); h.position.set(x, 9.96, z); scene.add(h);
-      });
-      cleanups.push(() => { trackMat.dispose(); headMat.dispose(); tGeo.dispose(); hGeo.dispose(); });
-
-      /* LED PERIMETER STRIPS */
-      const ledMat = new THREE.MeshStandardMaterial({ color: '#FFFFE8', emissive: new THREE.Color('#FFFFE8'), emissiveIntensity: 0.35, roughness: 0.04 });
-      const ls1 = new THREE.Mesh(new THREE.BoxGeometry(26, 0.025, 0.04), ledMat); ls1.position.set(-2, 10.18, 10.96); scene.add(ls1);
-      const ls2 = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.025, 26), ledMat); ls2.position.set(-9.96, 10.18, 2); scene.add(ls2);
-      cleanups.push(() => ledMat.dispose());
-
-      /* PRODUCT DISPLAY CABINET — visible in background behind car */
-      const cabMat   = new THREE.MeshPhysicalMaterial({ color: '#181614', roughness: 0.58, metalness: 0.24 });
-      const shlfMat  = new THREE.MeshStandardMaterial({ color: '#1C1A18', roughness: 0.7 });
-      const bGeo     = new THREE.CylinderGeometry(0.042, 0.048, 0.22, 12);
-      const bCapGeo  = new THREE.CylinderGeometry(0.036, 0.042, 0.04, 10);
-      const bCapMat  = new THREE.MeshPhysicalMaterial({ color: '#262626', roughness: 0.28, metalness: 0.65 });
-      const bMatA    = new THREE.MeshPhysicalMaterial({ color: '#0E0E18', roughness: 0.2, metalness: 0.04, clearcoat: 0.72 });
-      const bMatB    = new THREE.MeshPhysicalMaterial({ color: '#141428', roughness: 0.22, metalness: 0.04, clearcoat: 0.65 });
-      const bMatC    = new THREE.MeshPhysicalMaterial({ color: '#18080A', roughness: 0.22, metalness: 0.04, clearcoat: 0.6 });
-      const bMats    = [bMatA, bMatB, bMatC];
-
-      // Cabinet at (-5, 0, 8) — left-rear, visible against back wall from camera
-      const SX = -5, SZ = 8;
-      const cabBack = new THREE.Mesh(new THREE.PlaneGeometry(2.8, 3.2), cabMat);
-      cabBack.position.set(SX, 2.6, SZ); cabBack.rotation.y = -Math.PI / 2; scene.add(cabBack);
-      [[SX - 0.02, 4.22, SZ, 2.8, 0.06, 2.8],
-       [SX - 0.02, 1.02, SZ, 2.8, 0.06, 2.8],
-       [SX - 0.02, 2.6, SZ - 1.4, 0.06, 3.2, 2.8],
-       [SX - 0.02, 2.6, SZ + 1.4, 0.06, 3.2, 2.8]].forEach(([cx, cy, cz, gx, gy, gz]) => {
-        const p = new THREE.Mesh(new THREE.BoxGeometry(gx, gy, gz), cabMat);
-        p.position.set(cx, cy, cz); scene.add(p);
-      });
-      const boardGeo = new THREE.BoxGeometry(0.04, 0.04, 2.8);
-      [1.68, 2.42, 3.16, 3.90].forEach(y => {
-        const b = new THREE.Mesh(boardGeo, shlfMat); b.position.set(SX - 0.02, y, SZ); scene.add(b);
-      });
-      [1.82, 2.56, 3.28, 3.98].forEach(y => {
-        [SZ - 1.1, SZ - 0.6, SZ - 0.1, SZ + 0.4, SZ + 0.9].forEach((z, bi) => {
-          const bt = new THREE.Mesh(bGeo, bMats[bi % 3]);
-          bt.position.set(SX - 0.06, y, z); scene.add(bt);
-          const cap = new THREE.Mesh(bCapGeo, bCapMat);
-          cap.position.set(SX - 0.06, y + 0.13, z); scene.add(cap);
-        });
-      });
-      cleanups.push(() => { cabMat.dispose(); shlfMat.dispose(); bCapMat.dispose(); bMatA.dispose(); bMatB.dispose(); bMatC.dispose(); boardGeo.dispose(); bGeo.dispose(); bCapGeo.dispose(); });
-
-      /* TOOL CART — right-rear of car, visible background */
-      const ctBodyMat = new THREE.MeshPhysicalMaterial({ color: '#181820', roughness: 0.28, metalness: 0.84, clearcoat: 0.42 });
-      const ctDrawMat = new THREE.MeshPhysicalMaterial({ color: '#1C1C28', roughness: 0.24, metalness: 0.86 });
-      const ctHndMat  = new THREE.MeshPhysicalMaterial({ color: '#2E2E38', roughness: 0.18, metalness: 0.94 });
-      const ctWhlMat  = new THREE.MeshStandardMaterial({ color: '#080808', roughness: 0.94 });
-      const CX = 3.4, CZ = 5.5, CB = 0.56;
-      const ctBody = new THREE.Mesh(new THREE.BoxGeometry(0.64, 1.08, 0.46), ctBodyMat);
-      ctBody.position.set(CX, CB + 0.54, CZ); scene.add(ctBody);
-      [0.18, 0.38, 0.58, 0.78, 0.98].forEach(yo => {
-        const dr = new THREE.Mesh(new THREE.BoxGeometry(0.60, 0.175, 0.022), ctDrawMat);
-        dr.position.set(CX, CB + yo, CZ - 0.23); scene.add(dr);
-        const hb = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.026, 0.026), ctHndMat);
-        hb.position.set(CX, CB + yo, CZ - 0.245); scene.add(hb);
-      });
-      const ctTop = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.042, 0.48), ctBodyMat);
-      ctTop.position.set(CX, CB + 1.10, CZ); scene.add(ctTop);
-      const ctSH = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.64, 0.026), ctHndMat);
-      ctSH.position.set(CX - 0.32, CB + 0.80, CZ); scene.add(ctSH);
-      [[-0.24, -0.22], [-0.24, 0.22], [0.24, -0.22], [0.24, 0.22]].forEach(([dx, dz]) => {
-        const w = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.05, 8), ctWhlMat);
-        w.rotation.x = Math.PI / 2; w.position.set(CX + dx, 0.055, CZ + dz); scene.add(w);
-      });
-      cleanups.push(() => { ctBodyMat.dispose(); ctDrawMat.dispose(); ctHndMat.dispose(); ctWhlMat.dispose(); });
-
-      /* POLISHING MACHINE — near right side of car */
-      const polMat = new THREE.MeshPhysicalMaterial({ color: '#181818', roughness: 0.38, metalness: 0.72 });
-      const padMat = new THREE.MeshStandardMaterial({ color: '#0C0C10', roughness: 0.88 });
-      const polB = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.33, 12), polMat); polB.position.set(2.8, 0.165, 3.2); scene.add(polB);
-      const polP = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.04, 12), padMat); polP.position.set(2.8, 0.02, 3.2); scene.add(polP);
-      const polH = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.014, 0.56, 8), polMat); polH.position.set(2.8, 0.48, 3.2); polH.rotation.z = 0.38; scene.add(polH);
-      cleanups.push(() => { polMat.dispose(); padMat.dispose(); });
+      /* SHADOW RECEIVER FLOOR — invisible plane, only receives shadows from car */
+      const shadowFloor = new THREE.Mesh(
+        new THREE.PlaneGeometry(20, 20),
+        new THREE.ShadowMaterial({ opacity: 0.35 }),
+      );
+      shadowFloor.rotation.x = -Math.PI / 2;
+      shadowFloor.position.y = 0.001;
+      shadowFloor.receiveShadow = true;
+      scene.add(shadowFloor);
 
       /* LIGHTING */
-      scene.add(new THREE.AmbientLight('#C4BCB0', 0.022));
+      scene.add(new THREE.AmbientLight('#C4BCB0', 0.028));
 
-      // Primary key from directly above — tight cone, pool of light on car, not floor
+      // Primary key from directly above — tight cone, pool of light on car
       const key = new THREE.SpotLight('#FFF6E8', 2.8, 18, 0.24, 0.50, 1.4);
       key.position.set(0.5, 9.2, 0.8); key.target.position.set(0.2, 0.52, 0.3);
       key.castShadow = true; key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -0.00008; key.shadow.radius = 7;
@@ -349,11 +214,6 @@ export default function DettagliScene({ mouseRef }: { mouseRef: React.MutableRef
       const fill = new THREE.SpotLight('#FFF4EC', 0.45, 12, 0.6, 0.9, 2.0);
       fill.position.set(-1.5, 2.8, -3.5); fill.target.position.set(0, 1.0, 0.5);
       scene.add(fill, fill.target);
-
-      // Background shelf accent
-      const shAcc = new THREE.SpotLight('#FFE4B0', 0.28, 9, 0.7, 0.9);
-      shAcc.position.set(-3.2, 6.5, 5.5); shAcc.target.position.set(-5, 2.5, 8);
-      scene.add(shAcc, shAcc.target);
 
       const { RectAreaLightUniformsLib } = await import('three/examples/jsm/lights/RectAreaLightUniformsLib.js');
       if (disposed) return;
@@ -452,7 +312,7 @@ export default function DettagliScene({ mouseRef }: { mouseRef: React.MutableRef
       });
       ro.observe(el); cleanups.push(() => ro.disconnect());
 
-      /* LOAD CAR */
+      /* LOAD ASSETS */
       try {
         const [
           { GLTFLoader }, { DRACOLoader },
@@ -471,10 +331,29 @@ export default function DettagliScene({ mouseRef }: { mouseRef: React.MutableRef
 
         const draco = new DRACOLoader(); draco.setDecoderPath('/draco/'); draco.preload();
         const loader = new GLTFLoader(); loader.setDRACOLoader(draco);
+
+        /* Load car + garage in parallel */
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const gltf: any = await new Promise((res, rej) => loader.load('/models/ferrari.glb', res, undefined, rej));
+        const [gltf, garageGltf] = await Promise.all<any>([
+          new Promise((res, rej) => loader.load('/models/ferrari.glb', res, undefined, rej)),
+          new Promise((res, rej) => loader.load('/models/garage.glb',  res, undefined, rej)),
+        ]);
         if (disposed) return;
 
+        /* ── GARAGE ── */
+        const garageModel = garageGltf.scene as ThreeNS.Object3D;
+        // Garage floor in model space is at y≈-0.84 — lift so it sits at world y=0
+        garageModel.position.set(0, 0.84, 0);
+        garageModel.traverse((child: ThreeNS.Object3D) => {
+          const mesh = child as ThreeNS.Mesh;
+          if (mesh.isMesh) {
+            mesh.receiveShadow = true;
+            mesh.castShadow    = false;
+          }
+        });
+        scene.add(garageModel);
+
+        /* ── CAR ── */
         const model = gltf.scene as ThreeNS.Object3D;
         const bodyPaint = new THREE.MeshPhysicalMaterial({
           color: '#030303', metalness: 0.94, roughness: 0.04,
@@ -525,7 +404,7 @@ export default function DettagliScene({ mouseRef }: { mouseRef: React.MutableRef
           composerObj = comp;
         }
       } catch (err) {
-        console.error('DettagliScene: car load failed', err);
+        console.error('DettagliScene: load failed', err);
         setReady(true);
       }
     })();
@@ -599,6 +478,11 @@ export default function DettagliScene({ mouseRef }: { mouseRef: React.MutableRef
           </button>
         );
       })}
+
+      {/* CC Attribution — "Garage" by ROY (Sketchfab, CC BY 4.0) */}
+      <div aria-hidden="true" style={{ position: 'absolute', bottom: 10, right: 14, fontFamily: 'var(--font-sans)', fontSize: 9, letterSpacing: '0.1em', color: 'rgba(180,175,165,0.22)', pointerEvents: 'none', zIndex: 5 }}>
+        Garage model · ROY · CC BY 4.0
+      </div>
 
       <InfoPanel c={activeCallout} onClose={handleClose} />
     </div>
