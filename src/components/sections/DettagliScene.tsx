@@ -59,12 +59,12 @@ const SERVICES: ServiceDef[] = [
 ];
 
 /*
- * Camera sits outside the garage entrance (z=-5.5), looking through it.
- * Original garage orientation (no rotation): entrance at z=-4.53, back wall at z=+4.53,
- * left wall at x=-3.33. Camera right vector ≈ (-0.96, 0, -0.25), so the left-side wall
- * corner appears at canvas ~78–94% — right edge of the Dettagli panel.
+ * Camera is inside the garage near the entrance (pz=-3.0; entrance is at z=-4.53).
+ * Looking toward the back wall at z=+4.53. Camera right vector ≈ (-0.93, 0, -0.33),
+ * so the car (x=0) projects to canvas ~72% and the left-side wall far corner appears
+ * at ~82% — both inside the Dettagli panel (right half of canvas).
  */
-const DEFAULT_CAM = { px: 3.0, py: 1.6, pz: -5.5, lx: 0.5, ly: 0.55, lz: 4.0 };
+const DEFAULT_CAM = { px: 3.0, py: 1.6, pz: -3.0, lx: 0.5, ly: 0.55, lz: 4.0 };
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 const SK = 0.022, SD = 0.74;
