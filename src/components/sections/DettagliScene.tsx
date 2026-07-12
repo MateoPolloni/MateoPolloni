@@ -59,8 +59,8 @@ const CALLOUTS: CalloutDef[] = [
   },
 ];
 
-/* garage rotated 180°: back wall now at z=+4.53, right wall at x=+3.33, camera inside at x=2.5 */
-const DEFAULT_CAM = { px: 2.5, py: 1.6, pz: -4.0, lx: 0.5, ly: 0.55, lz: 3.5 };
+/* camera pulled back to pz:-6.5, lx:1.5 centers car at ~75% canvas in Dettagli */
+const DEFAULT_CAM = { px: 2.5, py: 1.6, pz: -6.5, lx: 1.5, ly: 0.55, lz: 3.0 };
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 /* Slow cinematic spring — no jump, pure glide */
