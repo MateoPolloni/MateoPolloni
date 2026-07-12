@@ -164,7 +164,7 @@ export default function DettagliScene({ mouseRef }: { mouseRef: React.MutableRef
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 0.88;
+      renderer.toneMappingExposure = 0.50;
       cleanups.push(() => renderer.dispose());
 
       /* SCENE */
@@ -176,45 +176,59 @@ export default function DettagliScene({ mouseRef }: { mouseRef: React.MutableRef
       camera.position.set(DEFAULT_CAM.px, DEFAULT_CAM.py, DEFAULT_CAM.pz);
       camera.lookAt(DEFAULT_CAM.lx, DEFAULT_CAM.ly, DEFAULT_CAM.lz);
 
-      /* LIGHTING */
-      scene.add(new THREE.AmbientLight('#C4BCB0', 0.028));
+      /* LIGHTING — controlled showroom levels, not overexposed */
+      scene.add(new THREE.AmbientLight('#C4BCB0', 0.012));
 
-      // Primary key from directly above — tight cone, pool of light on car
-      const key = new THREE.SpotLight('#FFF6E8', 2.8, 18, 0.24, 0.50, 1.4);
+      // Primary key — tight cone on car only
+      const key = new THREE.SpotLight('#FFF6E8', 1.1, 18, 0.20, 0.55, 1.5);
       key.position.set(0.5, 9.2, 0.8); key.target.position.set(0.2, 0.52, 0.3);
       key.castShadow = true; key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -0.00008; key.shadow.radius = 7;
       scene.add(key, key.target);
 
-      // Secondary fill from upper-left
-      const key2 = new THREE.SpotLight('#FFF0D8', 1.2, 16, 0.38, 0.7, 1.6);
+      // Secondary fill — subdued
+      const key2 = new THREE.SpotLight('#FFF0D8', 0.45, 16, 0.38, 0.7, 1.8);
       key2.position.set(-2.8, 7.0, 1.5); key2.target.position.set(0, 0.7, 0.2);
       scene.add(key2, key2.target);
 
-      // Rim 1 — rear right, cool, creates bright separation edge
-      const rim1 = new THREE.SpotLight('#C8DCFF', 1.2, 20, 0.32, 0.58, 1.2);
+      // Rim 1 — rear right edge separation
+      const rim1 = new THREE.SpotLight('#C8DCFF', 0.42, 20, 0.32, 0.60, 1.4);
       rim1.position.set(3.5, 4.5, 9.5); rim1.target.position.set(0.5, 0.65, 0);
       scene.add(rim1, rim1.target);
 
       // Rim 2 — rear left
-      const rim2 = new THREE.SpotLight('#D0E4FF', 0.7, 18, 0.36, 0.65, 1.4);
+      const rim2 = new THREE.SpotLight('#D0E4FF', 0.22, 18, 0.36, 0.65, 1.5);
       rim2.position.set(-4.5, 3.8, 8.5); rim2.target.position.set(-0.2, 0.55, 0.2);
       scene.add(rim2, rim2.target);
 
-      // Soft front fill (doesn't hit floor strongly)
-      const fill = new THREE.SpotLight('#FFF4EC', 0.45, 12, 0.6, 0.9, 2.0);
+      // Soft front fill
+      const fill = new THREE.SpotLight('#FFF4EC', 0.16, 12, 0.6, 0.9, 2.2);
       fill.position.set(-1.5, 2.8, -3.5); fill.target.position.set(0, 1.0, 0.5);
       scene.add(fill, fill.target);
 
-      // Back-left wall accent — illuminates the corner depth visible in Dettagli panel
-      const wallAcc = new THREE.SpotLight('#FFE8D0', 0.55, 20, 0.65, 0.95);
+      // Back wall accent — gentle illumination on garage interior
+      const wallAcc = new THREE.SpotLight('#FFE8D0', 0.22, 20, 0.65, 0.95);
       wallAcc.position.set(-1.5, 5.5, 7.5); wallAcc.target.position.set(-1.5, 0.5, 5.0);
       scene.add(wallAcc, wallAcc.target);
 
       const { RectAreaLightUniformsLib } = await import('three/examples/jsm/lights/RectAreaLightUniformsLib.js');
       if (disposed) return;
       RectAreaLightUniformsLib.init();
-      const area = new THREE.RectAreaLight('#FFF4EC', 0.85, 7.5, 1.8);
+      const area = new THREE.RectAreaLight('#FFF4EC', 0.32, 7.5, 1.8);
       area.position.set(-0.2, 8.0, 0.2); area.lookAt(0, 0, 0); scene.add(area);
+
+      /* STUDIO EXTENSION PLANES — fill geometry gaps at FOV edges */
+      const studioMat = new THREE.MeshStandardMaterial({ color: '#0C0B09', roughness: 0.97, side: THREE.DoubleSide });
+      // Left side wall: camera FOV reaches x≈-4.6 near the back wall; garage model ends at x=-4.20
+      const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(16, 9), studioMat);
+      leftWall.rotation.y = Math.PI / 2;
+      leftWall.position.set(-6.0, 4.0, 1.5);
+      scene.add(leftWall);
+      // Ceiling cap: frame top reaches y≈3.9 at depth 11; garage ceiling is at y≈3.1
+      const ceilCap = new THREE.Mesh(new THREE.PlaneGeometry(18, 18), studioMat);
+      ceilCap.rotation.x = Math.PI / 2;
+      ceilCap.position.set(-1.5, 4.2, 1.5);
+      scene.add(ceilCap);
+      cleanups.push(() => studioMat.dispose());
 
       /* ENV MAP */
       const { RoomEnvironment } = await import('three/examples/jsm/environments/RoomEnvironment.js');
@@ -415,8 +429,8 @@ export default function DettagliScene({ mouseRef }: { mouseRef: React.MutableRef
     <div ref={containerRef} className="absolute inset-0" style={{ pointerEvents: 'none' }}>
       <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block', touchAction: 'none', pointerEvents: 'none' }} />
 
-      {/* Left-edge gradient: protects centered subparagraph text readability */}
-      <div aria-hidden="true" style={{ position: 'absolute', top: 0, left: 0, width: '42%', height: '100%', background: 'linear-gradient(to right, rgba(7,6,5,0.58) 0%, rgba(7,6,5,0) 100%)', pointerEvents: 'none', zIndex: 3 }} />
+      {/* Left-edge gradient: shields typography from light bleed */}
+      <div aria-hidden="true" style={{ position: 'absolute', top: 0, left: 0, width: '58%', height: '100%', background: 'linear-gradient(to right, rgba(5,4,3,0.82) 0%, rgba(5,4,3,0.18) 70%, rgba(5,4,3,0) 100%)', pointerEvents: 'none', zIndex: 3 }} />
 
       {/* SVG overlay — ONLY circles + short lines; labels positioned by JS */}
       <svg aria-hidden="true" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', overflow: 'visible', opacity: ready ? 1 : 0, transition: 'opacity 1.8s ease', zIndex: 10 }}>
