@@ -59,12 +59,12 @@ const SERVICES: ServiceDef[] = [
 ];
 
 /*
- * Camera sits near the center-right of the garage (px=1.0), away from the window wall.
- * Camera right vector ≈ (-0.985, 0, -0.098): the window wall at x=+4.20 projects to the
- * LEFT side of the canvas (outside the Dettagli clip) while the car at x=0 lands at
- * canvas ~75% and the left side wall corner appears at ~91% — fully in the Dettagli half.
+ * Camera at px=2.0 inside the garage near the entrance (pz=-4.0; entrance is at z=-4.53).
+ * Camera right vector ≈ (-0.97, 0, -0.18): window wall at x=+4.20 projects to the LEFT
+ * half of canvas (outside Dettagli clip). Car center lands at canvas ~74%, left side wall
+ * corner at ~86% — both clearly in the Dettagli half with room for the service menu.
  */
-const DEFAULT_CAM = { px: 1.0, py: 1.5, pz: -2.5, lx: 0.4, ly: 0.65, lz: 3.5 };
+const DEFAULT_CAM = { px: 2.0, py: 1.8, pz: -4.0, lx: 0.5, ly: 0.7, lz: 4.0 };
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 const SK = 0.022, SD = 0.74;
@@ -171,7 +171,7 @@ export default function DettagliScene({ mouseRef }: { mouseRef: React.MutableRef
       /* SCENE */
       const scene = new THREE.Scene();
       scene.background = new THREE.Color('#07080A');
-      scene.fog = new THREE.Fog('#07080A', 6, 18);
+      scene.fog = new THREE.Fog('#07080A', 11, 26);
 
       const camera = new THREE.PerspectiveCamera(34, W / H, 0.1, 80);
       camera.position.set(DEFAULT_CAM.px, DEFAULT_CAM.py, DEFAULT_CAM.pz);
@@ -201,9 +201,11 @@ export default function DettagliScene({ mouseRef }: { mouseRef: React.MutableRef
       fill.position.set(-1.5, 2.8, -3.5); fill.target.position.set(0, 1.0, 0.5);
       scene.add(fill, fill.target);
 
-      const wallAcc = new THREE.SpotLight('#FFE8D0', 0.22, 20, 0.65, 0.95);
-      wallAcc.position.set(-1.5, 5.5, 7.5); wallAcc.target.position.set(-1.5, 0.5, 5.0);
-      scene.add(wallAcc, wallAcc.target);
+      // Camera-side wall fill — illuminates the interior face of the back wall so it reads
+      // as solid structure rather than dark void. Positioned in front of the wall, not behind.
+      const wallFill = new THREE.SpotLight('#F0E8D8', 0.30, 26, 0.70, 0.90);
+      wallFill.position.set(0.5, 4.5, 1.5); wallFill.target.position.set(0.0, 0.5, 4.5);
+      scene.add(wallFill, wallFill.target);
 
       const { RectAreaLightUniformsLib } = await import('three/examples/jsm/lights/RectAreaLightUniformsLib.js');
       if (disposed) return;
@@ -326,7 +328,20 @@ export default function DettagliScene({ mouseRef }: { mouseRef: React.MutableRef
             mesh.receiveShadow = true;
             mesh.castShadow    = false;
             const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-            mats.forEach(m => { (m as ThreeNS.Material).side = THREE.DoubleSide; });
+            mats.forEach(m => {
+              const mat = m as ThreeNS.MeshStandardMaterial;
+              mat.side = THREE.DoubleSide;
+              // Seal any transparent garage materials (window glass) into opaque dark surfaces.
+              // This eliminates exterior light bleed through the window wall.
+              if (mat.transparent || mat.opacity < 0.95) {
+                mat.color.set('#080808');
+                mat.transparent = false;
+                mat.opacity = 1.0;
+                mat.roughness = 0.92;
+                mat.metalness = 0.0;
+                mat.needsUpdate = true;
+              }
+            });
           }
         });
         scene.add(garageModel);
