@@ -59,12 +59,12 @@ const SERVICES: ServiceDef[] = [
 ];
 
 /*
- * Camera is inside the garage near the entrance (pz=-3.0; entrance is at z=-4.53).
- * Looking toward the back wall at z=+4.53. Camera right vector ≈ (-0.93, 0, -0.33),
- * so the car (x=0) projects to canvas ~72% and the left-side wall far corner appears
- * at ~82% — both inside the Dettagli panel (right half of canvas).
+ * Camera sits near the center-right of the garage (px=1.0), away from the window wall.
+ * Camera right vector ≈ (-0.985, 0, -0.098): the window wall at x=+4.20 projects to the
+ * LEFT side of the canvas (outside the Dettagli clip) while the car at x=0 lands at
+ * canvas ~75% and the left side wall corner appears at ~91% — fully in the Dettagli half.
  */
-const DEFAULT_CAM = { px: 3.0, py: 1.6, pz: -3.0, lx: 0.5, ly: 0.55, lz: 4.0 };
+const DEFAULT_CAM = { px: 1.0, py: 1.5, pz: -2.5, lx: 0.4, ly: 0.65, lz: 3.5 };
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 const SK = 0.022, SD = 0.74;
@@ -211,16 +211,24 @@ export default function DettagliScene({ mouseRef }: { mouseRef: React.MutableRef
       const area = new THREE.RectAreaLight('#FFF4EC', 0.32, 7.5, 1.8);
       area.position.set(-0.2, 8.0, 0.2); area.lookAt(0, 0, 0); scene.add(area);
 
-      /* STUDIO EXTENSION PLANES — fill geometry gaps at FOV edges */
+      /* STUDIO EXTENSION PLANES — fill geometry gaps and block the garage's window wall */
       const studioMat = new THREE.MeshStandardMaterial({ color: '#0C0B09', roughness: 0.97, side: THREE.DoubleSide });
+      // Left extension wall (world x≈-6, beyond garage left wall at x=-3.33)
       const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(16, 9), studioMat);
       leftWall.rotation.y = Math.PI / 2;
       leftWall.position.set(-6.0, 4.0, 1.5);
       scene.add(leftWall);
+      // Ceiling cap above garage ceiling
       const ceilCap = new THREE.Mesh(new THREE.PlaneGeometry(18, 18), studioMat);
       ceilCap.rotation.x = Math.PI / 2;
       ceilCap.position.set(-1.5, 4.2, 1.5);
       scene.add(ceilCap);
+      // Window blocker — dark plane covering the garage's open/window right wall
+      // Placed just inside x=4.20 (the window wall), normal facing left toward camera
+      const winBlocker = new THREE.Mesh(new THREE.PlaneGeometry(12, 6), studioMat);
+      winBlocker.rotation.y = -Math.PI / 2;
+      winBlocker.position.set(4.18, 1.5, 0.2);
+      scene.add(winBlocker);
       cleanups.push(() => studioMat.dispose());
 
       /* ENV MAP */
@@ -385,21 +393,19 @@ export default function DettagliScene({ mouseRef }: { mouseRef: React.MutableRef
       {/* Left-edge gradient: shields typography from light bleed */}
       <div aria-hidden="true" style={{ position: 'absolute', top: 0, left: 0, width: '58%', height: '100%', background: 'linear-gradient(to right, rgba(5,4,3,0.82) 0%, rgba(5,4,3,0.18) 70%, rgba(5,4,3,0) 100%)', pointerEvents: 'none', zIndex: 3 }} />
 
-      {/* Vertical service menu — far right edge of Dettagli panel */}
+      {/* Service menu — automotive configurator style, right edge */}
       <nav
         aria-label="Dettagli services"
         style={{
           position: 'absolute',
-          right: 18,
+          right: 0,
           top: '50%',
           transform: 'translateY(-50%)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'flex-end',
+          width: 182,
           zIndex: 20,
           pointerEvents: ready ? 'auto' : 'none',
           opacity: ready ? 1 : 0,
-          transition: 'opacity 1.4s ease',
+          transition: 'opacity 1.6s ease',
         }}
       >
         {SERVICES.map((s, i) => {
@@ -409,43 +415,73 @@ export default function DettagliScene({ mouseRef }: { mouseRef: React.MutableRef
               key={s.id}
               onClick={() => handleSelect(s.id)}
               style={{
-                background: 'none',
+                display: 'block',
+                width: '100%',
+                background: isActive ? 'rgba(255,255,255,0.028)' : 'transparent',
                 border: 'none',
+                borderTop: '1px solid rgba(255,255,255,0.055)',
                 cursor: 'pointer',
-                padding: '9px 0',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                opacity: isActive ? 1 : 0.30,
-                transition: `opacity 0.45s ease ${i * 0.06}s`,
+                padding: '13px 20px 13px 14px',
+                textAlign: 'right',
+                position: 'relative',
+                transition: 'background 0.5s ease',
               }}
-              onMouseEnter={e => { if (!isActive) e.currentTarget.style.opacity = '0.65'; }}
-              onMouseLeave={e => { if (!isActive) e.currentTarget.style.opacity = '0.30'; }}
+              onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'rgba(255,255,255,0.014)'; }}
+              onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
             >
-              <span style={{
+              {/* Left accent border */}
+              <div style={{
+                position: 'absolute',
+                left: 0, top: 0, bottom: 0,
+                width: 2,
+                background: isActive ? s.accent : 'transparent',
+                transition: 'background 0.45s cubic-bezier(0.16,1,0.3,1)',
+              }} />
+              {/* Number */}
+              <div style={{
+                fontFamily: "'Courier New', monospace",
+                fontSize: 8,
+                letterSpacing: '0.22em',
+                color: isActive ? s.accent : 'rgba(255,255,255,0.20)',
+                marginBottom: 7,
+                transition: 'color 0.45s ease',
+              }}>
+                {String(i + 1).padStart(2, '0')}
+              </div>
+              {/* Title */}
+              <div style={{
                 fontFamily: "var(--font-cormorant,'Cormorant',serif)",
-                fontSize: 11,
+                fontSize: 13,
                 fontWeight: 400,
-                letterSpacing: '0.18em',
+                letterSpacing: '0.13em',
                 textTransform: 'uppercase',
-                color: isActive ? '#EDE8DE' : 'rgba(196,190,180,0.9)',
-                lineHeight: 1,
+                color: isActive ? '#F0EBE0' : 'rgba(200,195,185,0.46)',
+                lineHeight: 1.1,
                 whiteSpace: 'nowrap',
-                transition: 'color 0.44s ease',
+                transition: 'color 0.45s ease',
               }}>
                 {s.title}
-              </span>
-              {/* Accent line — grows in when service is active */}
+              </div>
+              {/* Tag — slides in under title when active */}
               <div style={{
-                width: isActive ? 14 : 0,
-                height: 1,
-                background: s.accent,
-                flexShrink: 0,
-                transition: 'width 0.5s cubic-bezier(0.16,1,0.3,1)',
-              }} />
+                fontFamily: 'var(--font-sans)',
+                fontSize: 7,
+                letterSpacing: '0.22em',
+                textTransform: 'uppercase',
+                color: s.accent,
+                marginTop: isActive ? 6 : 0,
+                maxHeight: isActive ? 18 : 0,
+                opacity: isActive ? 0.72 : 0,
+                overflow: 'hidden',
+                transition: 'max-height 0.42s ease 0.08s, opacity 0.42s ease 0.08s, margin-top 0.42s ease 0.08s',
+              }}>
+                {s.tag}
+              </div>
             </button>
           );
         })}
+        {/* Bottom rule */}
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.055)' }} />
       </nav>
 
       {/* CC Attribution — "Garage" by ROY (Sketchfab, CC BY 4.0) */}
