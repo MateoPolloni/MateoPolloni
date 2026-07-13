@@ -30,8 +30,8 @@ const SERVICES: ServiceDef[] = [
     title: 'Tire Dressing',
     tag: 'Iron Fallout · Caliper Seal',
     body: 'Brake dust and iron fallout chemically dissolved. Calipers colour-sealed. Tires dressed to a deep rich matte — not the synthetic shine that wears off overnight.',
-    // Very low, right side at front wheel — tire tread, caliper, and brake detail fill the frame
-    camPos: [2.6, 0.48, 2.8], camLook: [0.75, 0.32, 2.9],
+    // Low angle, slight rear on front-right wheel — positions wheel at Dettagli panel centre (~74% canvas x)
+    camPos: [2.0, 0.44, 1.8], camLook: [0.2, 0.30, 2.55],
     accent: '#5C92A8',
   },
   {
@@ -39,8 +39,8 @@ const SERVICES: ServiceDef[] = [
     title: 'Interior Detailing',
     tag: 'Full Cabin · Every Surface',
     body: 'Alcantara, leather, carbon — each treated by its own protocol. Sanitised, conditioned, UV-protected from seat to headliner.',
-    // Elevated above roofline, slightly behind — top-down angle looking into the open cockpit
-    camPos: [1.2, 2.8, 0.8], camLook: [0.0, 0.72, 1.5],
+    // Behind and left of car, above roofline — looks down through open convertible top into cockpit
+    camPos: [-0.3, 2.1, 0.3], camLook: [0.15, 0.58, 2.0],
     accent: '#9080C0',
   },
   {
