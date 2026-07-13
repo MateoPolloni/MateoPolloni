@@ -21,7 +21,7 @@ const SERVICES: ServiceDef[] = [
     title: 'Ceramic Coating',
     tag: '9H Hardness · 5-Year Bond',
     body: 'A molecular bond that becomes part of your paint. Total resistance to UV, chemicals, and micro-scratches — with a depth of gloss no wax can approach.',
-    camPos: [1.2, 2.2, 3.6], camLook: [0.4, 0.82, 1.0],
+    camPos: [1.2, 2.2, 2.8], camLook: [0.4, 0.82, 1.8],
     accent: '#C8A44A',
   },
   {
@@ -29,7 +29,7 @@ const SERVICES: ServiceDef[] = [
     title: 'Tire Dressing',
     tag: 'Iron Fallout · Caliper Seal',
     body: 'Brake dust and iron fallout chemically dissolved. Calipers colour-sealed. Tires dressed to a deep rich matte — not the synthetic shine that wears off overnight.',
-    camPos: [2.8, 0.68, 2.9], camLook: [0.9, 0.26, 1.3],
+    camPos: [2.8, 0.68, 2.9], camLook: [0.9, 0.26, 2.3],
     accent: '#5C92A8',
   },
   {
@@ -37,7 +37,7 @@ const SERVICES: ServiceDef[] = [
     title: 'Interior Detailing',
     tag: 'Full Cabin · Every Surface',
     body: 'Alcantara, leather, carbon — each treated by its own protocol. Sanitised, conditioned, UV-protected from seat to headliner.',
-    camPos: [0.6, 3.4, -0.1], camLook: [0.0, 0.52, 0.0],
+    camPos: [0.6, 3.4, 0.4], camLook: [0.0, 0.52, 1.0],
     accent: '#9080C0',
   },
   {
@@ -45,7 +45,7 @@ const SERVICES: ServiceDef[] = [
     title: 'Paint Correction',
     tag: 'Single to Multi-Stage',
     body: 'Swirl marks, water etch, oxidation — removed at the molecular level. The surface becomes what it was the day it left the factory.',
-    camPos: [2.8, 1.5, -2.4], camLook: [0.4, 0.62, -0.5],
+    camPos: [2.8, 1.5, -1.8], camLook: [0.4, 0.62, 0.5],
     accent: '#B08A38',
   },
   {
@@ -53,7 +53,7 @@ const SERVICES: ServiceDef[] = [
     title: 'Glass Treatment',
     tag: 'Hydrophobic · Anti-UV',
     body: 'Water sheets off at 50 mph. UV fully blocked. Every pane clarity-polished before nano-ceramic is applied — inside and out. Visibility redefined.',
-    camPos: [1.0, 1.95, 2.6], camLook: [0.3, 0.96, 0.5],
+    camPos: [1.0, 1.95, 3.0], camLook: [0.3, 0.96, 1.5],
     accent: '#6EA4BC',
   },
 ];
@@ -165,7 +165,7 @@ export default function DettagliScene({ mouseRef }: { mouseRef: React.MutableRef
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 0.50;
+      renderer.toneMappingExposure = 0.38;
       cleanups.push(() => renderer.dispose());
 
       /* SCENE */
@@ -177,46 +177,46 @@ export default function DettagliScene({ mouseRef }: { mouseRef: React.MutableRef
       camera.position.set(DEFAULT_CAM.px, DEFAULT_CAM.py, DEFAULT_CAM.pz);
       camera.lookAt(DEFAULT_CAM.lx, DEFAULT_CAM.ly, DEFAULT_CAM.lz);
 
-      /* LIGHTING — controlled showroom levels */
-      scene.add(new THREE.AmbientLight('#C4BCB0', 0.012));
+      /* LIGHTING — controlled luxury-showroom levels */
+      scene.add(new THREE.AmbientLight('#C4BCB0', 0.008));
 
-      const key = new THREE.SpotLight('#FFF6E8', 1.1, 18, 0.20, 0.55, 1.5);
-      key.position.set(0.5, 9.2, 0.8); key.target.position.set(0.2, 0.52, 0.3);
+      // Primary key — tight cone, halved from previous to avoid blown highlights
+      const key = new THREE.SpotLight('#FFF6E8', 0.55, 18, 0.20, 0.55, 1.5);
+      key.position.set(0.5, 9.2, 1.8); key.target.position.set(0.2, 0.52, 1.0);
       key.castShadow = true; key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -0.00008; key.shadow.radius = 7;
       scene.add(key, key.target);
 
-      const key2 = new THREE.SpotLight('#FFF0D8', 0.45, 16, 0.38, 0.7, 1.8);
-      key2.position.set(-2.8, 7.0, 1.5); key2.target.position.set(0, 0.7, 0.2);
+      const key2 = new THREE.SpotLight('#FFF0D8', 0.20, 16, 0.38, 0.7, 1.8);
+      key2.position.set(-2.8, 7.0, 2.5); key2.target.position.set(0, 0.7, 1.0);
       scene.add(key2, key2.target);
 
-      const rim1 = new THREE.SpotLight('#C8DCFF', 0.42, 20, 0.32, 0.60, 1.4);
-      rim1.position.set(3.5, 4.5, 9.5); rim1.target.position.set(0.5, 0.65, 0);
+      const rim1 = new THREE.SpotLight('#C8DCFF', 0.18, 20, 0.32, 0.60, 1.4);
+      rim1.position.set(3.5, 4.5, 9.5); rim1.target.position.set(0.5, 0.65, 1.0);
       scene.add(rim1, rim1.target);
 
-      const rim2 = new THREE.SpotLight('#D0E4FF', 0.22, 18, 0.36, 0.65, 1.5);
-      rim2.position.set(-4.5, 3.8, 8.5); rim2.target.position.set(-0.2, 0.55, 0.2);
+      const rim2 = new THREE.SpotLight('#D0E4FF', 0.09, 18, 0.36, 0.65, 1.5);
+      rim2.position.set(-4.5, 3.8, 8.5); rim2.target.position.set(-0.2, 0.55, 1.0);
       scene.add(rim2, rim2.target);
 
-      const fill = new THREE.SpotLight('#FFF4EC', 0.16, 12, 0.6, 0.9, 2.2);
-      fill.position.set(-1.5, 2.8, -3.5); fill.target.position.set(0, 1.0, 0.5);
+      const fill = new THREE.SpotLight('#FFF4EC', 0.07, 12, 0.6, 0.9, 2.2);
+      fill.position.set(-1.5, 2.8, -3.5); fill.target.position.set(0, 1.0, 1.0);
       scene.add(fill, fill.target);
 
-      // Back-wall fill — illuminates the back wall plane from the camera side so it reads
-      // as solid structure. Positioned well in front of the wall (z=0.5) aimed at z=4.6.
-      const wallFill = new THREE.SpotLight('#EEE4D0', 0.55, 28, 0.80, 0.85);
+      // Back-wall fill — illuminates the back wall plane at z=4.6
+      const wallFill = new THREE.SpotLight('#EEE4D0', 0.35, 28, 0.80, 0.85);
       wallFill.position.set(0.0, 4.8, 0.5); wallFill.target.position.set(0.0, 1.5, 4.6);
       scene.add(wallFill, wallFill.target);
 
       // Side-wall fill — grazes the left wall for depth
-      const sideWallFill = new THREE.SpotLight('#EEE4D0', 0.28, 20, 0.75, 0.90);
-      sideWallFill.position.set(-1.5, 4.0, 0.0); sideWallFill.target.position.set(-3.5, 1.0, 0.0);
+      const sideWallFill = new THREE.SpotLight('#EEE4D0', 0.14, 20, 0.75, 0.90);
+      sideWallFill.position.set(-1.5, 4.0, 1.0); sideWallFill.target.position.set(-3.5, 1.0, 1.0);
       scene.add(sideWallFill, sideWallFill.target);
 
       const { RectAreaLightUniformsLib } = await import('three/examples/jsm/lights/RectAreaLightUniformsLib.js');
       if (disposed) return;
       RectAreaLightUniformsLib.init();
-      const area = new THREE.RectAreaLight('#FFF4EC', 0.32, 7.5, 1.8);
-      area.position.set(-0.2, 8.0, 0.2); area.lookAt(0, 0, 0); scene.add(area);
+      const area = new THREE.RectAreaLight('#FFF4EC', 0.12, 7.5, 1.8);
+      area.position.set(-0.2, 8.0, 1.0); area.lookAt(0, 0.5, 1.0); scene.add(area);
 
       /*
        * STUDIO ENCLOSURE — explicit geometry sealing every open side.
@@ -389,12 +389,12 @@ export default function DettagliScene({ mouseRef }: { mouseRef: React.MutableRef
         const bodyPaint = new THREE.MeshPhysicalMaterial({
           color: '#030303', metalness: 0.94, roughness: 0.04,
           clearcoat: 1.0, clearcoatRoughness: 0.03,
-          envMapIntensity: 0.75, specularIntensity: 0.80,
+          envMapIntensity: 0.40, specularIntensity: 0.65,
           specularColor: new THREE.Color('#E8DFD0'),
         });
-        const glassMat  = new THREE.MeshPhysicalMaterial({ color: '#081018', roughness: 0.02, transmission: 0.92, transparent: true, opacity: 0.24, ior: 1.52, envMapIntensity: 0.62 });
+        const glassMat  = new THREE.MeshPhysicalMaterial({ color: '#081018', roughness: 0.02, transmission: 0.92, transparent: true, opacity: 0.24, ior: 1.52, envMapIntensity: 0.32 });
         const detailMat = new THREE.MeshStandardMaterial({ color: '#050505', roughness: 0.62, metalness: 0.12 });
-        const rimMat    = new THREE.MeshPhysicalMaterial({ color: '#0A0A12', metalness: 0.97, roughness: 0.06, envMapIntensity: 0.88 });
+        const rimMat    = new THREE.MeshPhysicalMaterial({ color: '#0A0A12', metalness: 0.97, roughness: 0.06, envMapIntensity: 0.48 });
         const tireMat   = new THREE.MeshStandardMaterial({ color: '#070707', roughness: 0.97 });
         const tailMat   = new THREE.MeshPhysicalMaterial({ color: '#200000', emissive: new THREE.Color('#FF1400'), emissiveIntensity: 1.8, roughness: 0.04, transparent: true, opacity: 0.88 });
         const headMat   = new THREE.MeshPhysicalMaterial({ color: '#060A10', emissive: new THREE.Color('#6888FF'), emissiveIntensity: 0.42, roughness: 0.04 });
@@ -413,7 +413,7 @@ export default function DettagliScene({ mouseRef }: { mouseRef: React.MutableRef
           else if (n.includes('head')  || (n.includes('light') && (n.includes('_f') || n.includes('front')))) mesh.material = headMat;
           else mesh.material = bodyPaint;
         });
-        model.position.set(0, 0.15, 0);
+        model.position.set(0, 0.15, 1.0);
         scene.add(model);
         draco.dispose();
         setReady(true);
@@ -423,7 +423,7 @@ export default function DettagliScene({ mouseRef }: { mouseRef: React.MutableRef
           const target = new THREE.WebGLRenderTarget(cw, ch, { samples: 8, type: THREE.HalfFloatType });
           const comp = new EC(renderer, target);
           comp.addPass(new RP(scene, camera));
-          comp.addPass(new UBP(new THREE.Vector2(cw, ch), 0.048, 0.44, 0.94));
+          comp.addPass(new UBP(new THREE.Vector2(cw, ch), 0.016, 0.36, 0.98));
           comp.addPass(new SP());
           comp.addPass(new OP());
           composerObj = comp;
