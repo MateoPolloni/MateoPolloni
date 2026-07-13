@@ -22,7 +22,7 @@ const SERVICES: ServiceDef[] = [
     tag: '9H Hardness · 5-Year Bond',
     body: 'A molecular bond that becomes part of your paint. Total resistance to UV, chemicals, and micro-scratches — with a depth of gloss no wax can approach.',
     // Right-rear elevated — frames the full side panel from a flattering 3/4 rear angle
-    camPos: [2.5, 1.4, -0.2], camLook: [0.1, 0.72, 1.5],
+    camPos: [2.5, 1.4, -0.2], camLook: [0.1, 0.92, 1.5],
     accent: '#C8A44A',
   },
   {
@@ -30,8 +30,8 @@ const SERVICES: ServiceDef[] = [
     title: 'Tire Dressing',
     tag: 'Iron Fallout · Caliper Seal',
     body: 'Brake dust and iron fallout chemically dissolved. Calipers colour-sealed. Tires dressed to a deep rich matte — not the synthetic shine that wears off overnight.',
-    // Left side, very low, at front-axle Z — wheel at canvas ~75% (Dettagli centre)
-    camPos: [-2.5, 0.45, 2.8], camLook: [-1.2, 0.30, 2.5],
+    // Left side, low, front-axle depth — higher camera, lookAt offset so wheel lands at canvas ~74%
+    camPos: [-2.5, 0.65, 2.8], camLook: [-0.4, 0.65, 2.1],
     accent: '#5C92A8',
   },
   {
@@ -39,8 +39,8 @@ const SERVICES: ServiceDef[] = [
     title: 'Interior Detailing',
     tag: 'Full Cabin · Every Surface',
     body: 'Alcantara, leather, carbon — each treated by its own protocol. Sanitised, conditioned, UV-protected from seat to headliner.',
-    // Behind and right, above roofline — pitches 29° down through open top; cabin at canvas ~75%
-    camPos: [2.0, 2.5, -1.5], camLook: [1.0, 0.55, 1.8],
+    // Left-rear, above roofline — camera at z=3.5 (above rear deck) looks forward into open cabin
+    camPos: [-1.5, 2.5, 3.5], camLook: [-1.0, 0.75, 0.8],
     accent: '#9080C0',
   },
   {
@@ -49,7 +49,7 @@ const SERVICES: ServiceDef[] = [
     tag: 'Single to Multi-Stage',
     body: 'Swirl marks, water etch, oxidation — removed at the molecular level. The surface becomes what it was the day it left the factory.',
     // Left-rear — rear quarter panel on the opposite side, prime surface for correction work
-    camPos: [-1.8, 1.3, -0.2], camLook: [-0.1, 0.65, 0.8],
+    camPos: [-1.8, 1.3, -0.2], camLook: [-0.1, 0.85, 0.8],
     accent: '#B08A38',
   },
   {
@@ -58,7 +58,7 @@ const SERVICES: ServiceDef[] = [
     tag: 'Hydrophobic · Anti-UV',
     body: 'Water sheets off at 50 mph. UV fully blocked. Every pane clarity-polished before nano-ceramic is applied — inside and out. Visibility redefined.',
     // Right-front, windshield height — frames the front glass and A-pillar head-on
-    camPos: [2.0, 1.5, 3.5], camLook: [0.0, 0.98, 2.5],
+    camPos: [2.0, 1.5, 3.5], camLook: [0.0, 1.18, 2.5],
     accent: '#6EA4BC',
   },
 ];
@@ -69,7 +69,7 @@ const SERVICES: ServiceDef[] = [
  * half of canvas (outside Dettagli clip). Car center lands at canvas ~74%, left side wall
  * corner at ~86% — both clearly in the Dettagli half with room for the service menu.
  */
-const DEFAULT_CAM = { px: 2.0, py: 1.8, pz: -4.0, lx: 0.5, ly: 0.7, lz: 4.0 };
+const DEFAULT_CAM = { px: 2.0, py: 1.8, pz: -4.0, lx: 0.5, ly: 0.9, lz: 4.0 };
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 const SK = 0.022, SD = 0.74;
@@ -187,24 +187,24 @@ export default function DettagliScene({ mouseRef }: { mouseRef: React.MutableRef
 
       // Primary key — tight cone, halved from previous to avoid blown highlights
       const key = new THREE.SpotLight('#FFF6E8', 0.55, 18, 0.20, 0.55, 1.5);
-      key.position.set(0.5, 9.2, 2.3); key.target.position.set(0.2, 0.52, 1.5);
+      key.position.set(0.5, 9.2, 2.3); key.target.position.set(0.2, 0.72, 1.5);
       key.castShadow = true; key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -0.00008; key.shadow.radius = 7;
       scene.add(key, key.target);
 
       const key2 = new THREE.SpotLight('#FFF0D8', 0.20, 16, 0.38, 0.7, 1.8);
-      key2.position.set(-2.8, 7.0, 3.0); key2.target.position.set(0, 0.7, 1.5);
+      key2.position.set(-2.8, 7.0, 3.0); key2.target.position.set(0, 0.90, 1.5);
       scene.add(key2, key2.target);
 
       const rim1 = new THREE.SpotLight('#C8DCFF', 0.18, 20, 0.32, 0.60, 1.4);
-      rim1.position.set(3.5, 4.5, 9.5); rim1.target.position.set(0.5, 0.65, 1.5);
+      rim1.position.set(3.5, 4.5, 9.5); rim1.target.position.set(0.5, 0.85, 1.5);
       scene.add(rim1, rim1.target);
 
       const rim2 = new THREE.SpotLight('#D0E4FF', 0.09, 18, 0.36, 0.65, 1.5);
-      rim2.position.set(-4.5, 3.8, 8.5); rim2.target.position.set(-0.2, 0.55, 1.5);
+      rim2.position.set(-4.5, 3.8, 8.5); rim2.target.position.set(-0.2, 0.75, 1.5);
       scene.add(rim2, rim2.target);
 
       const fill = new THREE.SpotLight('#FFF4EC', 0.07, 12, 0.6, 0.9, 2.2);
-      fill.position.set(-1.5, 2.8, -3.5); fill.target.position.set(0, 1.0, 1.5);
+      fill.position.set(-1.5, 2.8, -3.5); fill.target.position.set(0, 1.20, 1.5);
       scene.add(fill, fill.target);
 
       // Back-wall fill — illuminates the back wall plane at z=4.6
@@ -221,7 +221,7 @@ export default function DettagliScene({ mouseRef }: { mouseRef: React.MutableRef
       if (disposed) return;
       RectAreaLightUniformsLib.init();
       const area = new THREE.RectAreaLight('#FFF4EC', 0.12, 7.5, 1.8);
-      area.position.set(-0.2, 8.0, 1.5); area.lookAt(0, 0.5, 1.5); scene.add(area);
+      area.position.set(-0.2, 8.0, 1.5); area.lookAt(0, 0.70, 1.5); scene.add(area);
 
       /*
        * STUDIO ENCLOSURE — explicit geometry sealing every open side.
@@ -418,7 +418,7 @@ export default function DettagliScene({ mouseRef }: { mouseRef: React.MutableRef
           else if (n.includes('head')  || (n.includes('light') && (n.includes('_f') || n.includes('front')))) mesh.material = headMat;
           else mesh.material = bodyPaint;
         });
-        model.position.set(0, 0.15, 1.5);
+        model.position.set(0, 0.35, 1.5);
         scene.add(model);
         draco.dispose();
         setReady(true);
