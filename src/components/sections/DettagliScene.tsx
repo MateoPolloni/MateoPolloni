@@ -201,11 +201,16 @@ export default function DettagliScene({ mouseRef }: { mouseRef: React.MutableRef
       fill.position.set(-1.5, 2.8, -3.5); fill.target.position.set(0, 1.0, 0.5);
       scene.add(fill, fill.target);
 
-      // Camera-side wall fill — illuminates the interior face of the back wall so it reads
-      // as solid structure rather than dark void. Positioned in front of the wall, not behind.
-      const wallFill = new THREE.SpotLight('#F0E8D8', 0.30, 26, 0.70, 0.90);
-      wallFill.position.set(0.5, 4.5, 1.5); wallFill.target.position.set(0.0, 0.5, 4.5);
+      // Back-wall fill — illuminates the back wall plane from the camera side so it reads
+      // as solid structure. Positioned well in front of the wall (z=0.5) aimed at z=4.6.
+      const wallFill = new THREE.SpotLight('#EEE4D0', 0.55, 28, 0.80, 0.85);
+      wallFill.position.set(0.0, 4.8, 0.5); wallFill.target.position.set(0.0, 1.5, 4.6);
       scene.add(wallFill, wallFill.target);
+
+      // Side-wall fill — grazes the left wall for depth
+      const sideWallFill = new THREE.SpotLight('#EEE4D0', 0.28, 20, 0.75, 0.90);
+      sideWallFill.position.set(-1.5, 4.0, 0.0); sideWallFill.target.position.set(-3.5, 1.0, 0.0);
+      scene.add(sideWallFill, sideWallFill.target);
 
       const { RectAreaLightUniformsLib } = await import('three/examples/jsm/lights/RectAreaLightUniformsLib.js');
       if (disposed) return;
@@ -213,25 +218,47 @@ export default function DettagliScene({ mouseRef }: { mouseRef: React.MutableRef
       const area = new THREE.RectAreaLight('#FFF4EC', 0.32, 7.5, 1.8);
       area.position.set(-0.2, 8.0, 0.2); area.lookAt(0, 0, 0); scene.add(area);
 
-      /* STUDIO EXTENSION PLANES — fill geometry gaps and block the garage's window wall */
-      const studioMat = new THREE.MeshStandardMaterial({ color: '#0C0B09', roughness: 0.97, side: THREE.DoubleSide });
-      // Left extension wall (world x≈-6, beyond garage left wall at x=-3.33)
-      const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(16, 9), studioMat);
-      leftWall.rotation.y = Math.PI / 2;
-      leftWall.position.set(-6.0, 4.0, 1.5);
+      /*
+       * STUDIO ENCLOSURE — explicit geometry sealing every open side.
+       *
+       * studioMat (#0A0908, near-black) is used for blocking planes (window, ceiling, sides)
+       * that must not draw attention. wallMat (#1E1B18, visible warm dark-gray) is used for
+       * the structural walls that the camera looks at and need to read as solid surfaces.
+       */
+      const studioMat = new THREE.MeshStandardMaterial({ color: '#0A0908', roughness: 0.97, side: THREE.DoubleSide });
+      const wallMat   = new THREE.MeshStandardMaterial({ color: '#1E1B18', roughness: 0.94, metalness: 0.04, side: THREE.DoubleSide });
+
+      // BACK WALL — closes the open end at z=+4.53. Garage model has no mesh here;
+      // this plane is the definitive closure the camera looks directly at.
+      const backWall = new THREE.Mesh(new THREE.PlaneGeometry(16, 5), wallMat);
+      backWall.position.set(0, 1.5, 4.6);   // faces camera (-z normal, no rotation needed)
+      scene.add(backWall);
+
+      // FRONT WALL — closes the entrance (z=-4.53) for service cameras that look backward
+      const frontWall = new THREE.Mesh(new THREE.PlaneGeometry(16, 5), wallMat);
+      frontWall.rotation.y = Math.PI;        // flip to face +z (inward)
+      frontWall.position.set(0, 1.5, -4.7);
+      scene.add(frontWall);
+
+      // LEFT SIDE WALL — extends and seals the left side beyond the garage model
+      const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(16, 5), wallMat);
+      leftWall.rotation.y = Math.PI / 2;     // faces +x (inward)
+      leftWall.position.set(-3.5, 1.5, 0.0);
       scene.add(leftWall);
-      // Ceiling cap above garage ceiling
-      const ceilCap = new THREE.Mesh(new THREE.PlaneGeometry(18, 18), studioMat);
-      ceilCap.rotation.x = Math.PI / 2;
-      ceilCap.position.set(-1.5, 4.2, 1.5);
-      scene.add(ceilCap);
-      // Window blocker — dark plane covering the garage's open/window right wall
-      // Placed just inside x=4.20 (the window wall), normal facing left toward camera
+
+      // RIGHT / WINDOW BLOCKER — dark plane sealing the window wall (not a visible wall)
       const winBlocker = new THREE.Mesh(new THREE.PlaneGeometry(12, 6), studioMat);
       winBlocker.rotation.y = -Math.PI / 2;
       winBlocker.position.set(4.18, 1.5, 0.2);
       scene.add(winBlocker);
-      cleanups.push(() => studioMat.dispose());
+
+      // CEILING CAP
+      const ceilCap = new THREE.Mesh(new THREE.PlaneGeometry(18, 18), studioMat);
+      ceilCap.rotation.x = Math.PI / 2;
+      ceilCap.position.set(-1.5, 4.2, 1.5);
+      scene.add(ceilCap);
+
+      cleanups.push(() => { studioMat.dispose(); wallMat.dispose(); });
 
       /* ENV MAP */
       const { RoomEnvironment } = await import('three/examples/jsm/environments/RoomEnvironment.js');
@@ -345,6 +372,17 @@ export default function DettagliScene({ mouseRef }: { mouseRef: React.MutableRef
           }
         });
         scene.add(garageModel);
+
+        /*
+         * Garage clone rotated 180° on Y — its solid back wall (model z=+4.53) maps to
+         * world z=-4.53, closing the open entrance. Its window wall (model x=+4.20) maps
+         * to world x=-4.20, which is occluded by the leftWall plane. Tiny Y offset (0.01)
+         * prevents z-fighting with the shared floor geometry.
+         */
+        const garageClone = (garageGltf.scene as ThreeNS.Object3D).clone(true);
+        garageClone.rotation.y = Math.PI;
+        garageClone.position.set(0, 0.85, 0);
+        scene.add(garageClone);
 
         /* ── CAR ── */
         const model = gltf.scene as ThreeNS.Object3D;
