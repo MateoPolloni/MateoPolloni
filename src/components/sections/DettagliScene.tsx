@@ -30,8 +30,8 @@ const SERVICES: ServiceDef[] = [
     title: 'Tire Dressing',
     tag: 'Iron Fallout · Caliper Seal',
     body: 'Brake dust and iron fallout chemically dissolved. Calipers colour-sealed. Tires dressed to a deep rich matte — not the synthetic shine that wears off overnight.',
-    // Left side, low, front-axle depth — higher camera, lookAt offset so wheel lands at canvas ~74%
-    camPos: [-2.5, 0.65, 2.8], camLook: [-0.4, 0.65, 2.1],
+    // Right side, very low, behind front axle — right-front wheel at canvas ~74%; stays on same side as default
+    camPos: [2.0, 0.65, 1.5], camLook: [1.2, 0.65, 3.0],
     accent: '#5C92A8',
   },
   {
@@ -39,8 +39,8 @@ const SERVICES: ServiceDef[] = [
     title: 'Interior Detailing',
     tag: 'Full Cabin · Every Surface',
     body: 'Alcantara, leather, carbon — each treated by its own protocol. Sanitised, conditioned, UV-protected from seat to headliner.',
-    // Left-rear, above roofline — camera at z=3.5 (above rear deck) looks forward into open cabin
-    camPos: [-1.5, 2.5, 3.5], camLook: [-1.0, 0.75, 0.8],
+    // Right side, elevated above roofline, at front-cabin z — forward+left vector into open convertible cabin; interior at canvas ~74%
+    camPos: [2.0, 2.5, 0.5], camLook: [0.0, 0.85, 3.0],
     accent: '#9080C0',
   },
   {
@@ -48,8 +48,8 @@ const SERVICES: ServiceDef[] = [
     title: 'Paint Correction',
     tag: 'Single to Multi-Stage',
     body: 'Swirl marks, water etch, oxidation — removed at the molecular level. The surface becomes what it was the day it left the factory.',
-    // Left-rear — rear quarter panel on the opposite side, prime surface for correction work
-    camPos: [-1.8, 1.3, -0.2], camLook: [-0.1, 0.85, 0.8],
+    // Right-rear, just past car's rear — showcases right rear quarter panel without crossing to other side
+    camPos: [2.5, 1.4, 3.8], camLook: [0.5, 0.85, 2.5],
     accent: '#B08A38',
   },
   {
