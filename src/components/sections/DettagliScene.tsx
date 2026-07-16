@@ -22,46 +22,52 @@ const SERVICES: ServiceDef[] = [
     title: 'Ceramic Coating',
     tag: '9H Hardness · 5-Year Bond',
     body: 'A molecular bond that becomes part of your paint. Total resistance to UV, chemicals, and micro-scratches — with a depth of gloss no wax can approach.',
+    // Right-side 3/4 view of the car's door/side panel
     camPos: [2.5, 1.4, -0.2], camLook: [0.1, 0.79, 1.5],
     accent: '#C8A44A',
-    carTarget: [0.60, 0.46],
+    carTarget: [0.63, 0.47],
   },
   {
     id: 'tires',
     title: 'Tire Dressing',
     tag: 'Iron Fallout · Caliper Seal',
     body: 'Brake dust and iron fallout chemically dissolved. Calipers colour-sealed. Tires dressed to a deep rich matte — not the synthetic shine that wears off overnight.',
-    // Front-right, low — camera in front of car at z=0, looking toward rear; wheel at canvas ~75%
-    camPos: [2.5, 0.70, 0.0], camLook: [1.6, 0.57, 3.0],
+    // Right side, low, at front of car — looks along right side toward front-right wheel; wheel at canvas ~75%
+    // Verified: camera-right ≈ (-0.98, 0, -0.20); wheel Δx=-1.65, Δz=-1.2 → canvas ~75%
+    camPos: [2.5, 0.55, 0.5], camLook: [1.8, 0.55, 4.0],
     accent: '#5C92A8',
-    carTarget: [0.65, 0.68],
+    carTarget: [0.75, 0.53],
   },
   {
     id: 'interior',
     title: 'Interior Detailing',
     tag: 'Full Cabin · Every Surface',
     body: 'Alcantara, leather, carbon — each treated by its own protocol. Sanitised, conditioned, UV-protected from seat to headliner.',
-    camPos: [2.0, 2.5, 0.5], camLook: [0.0, 0.72, 3.0],
+    // Left-rear, elevated above roofline — camera BEHIND car (z=3.5) looking forward into open cabin
+    // Transitions to/from right-side cameras cross x=0 at y≥1.77, clearing the roofline (~y=1.32)
+    camPos: [-1.5, 2.5, 3.5], camLook: [-1.0, 0.75, 0.8],
     accent: '#9080C0',
-    carTarget: [0.65, 0.42],
+    carTarget: [0.72, 0.50],
   },
   {
     id: 'paint',
     title: 'Paint Correction',
     tag: 'Single to Multi-Stage',
     body: 'Swirl marks, water etch, oxidation — removed at the molecular level. The surface becomes what it was the day it left the factory.',
+    // Right-rear, just past car's rear — showcases right rear quarter panel
     camPos: [2.5, 1.4, 3.8], camLook: [0.5, 0.72, 2.5],
     accent: '#B08A38',
-    carTarget: [0.63, 0.50],
+    carTarget: [0.61, 0.48],
   },
   {
     id: 'glass',
     title: 'Glass Treatment',
     tag: 'Hydrophobic · Anti-UV',
     body: 'Water sheets off at 50 mph. UV fully blocked. Every pane clarity-polished before nano-ceramic is applied — inside and out. Visibility redefined.',
-    camPos: [2.0, 1.5, 3.5], camLook: [0.0, 1.05, 2.5],
+    // Further in front (z=-2.5); lookAt at right A-pillar area makes windshield glass land at canvas ~76%
+    camPos: [2.5, 1.3, -2.5], camLook: [0.75, 1.05, 0.8],
     accent: '#6EA4BC',
-    carTarget: [0.62, 0.36],
+    carTarget: [0.76, 0.38],
   },
 ];
 
@@ -82,18 +88,16 @@ function sp(v: number, vel: number, t: number): [number, number] {
 function ConnectorLine({ active, cW, cH }: { active: ServiceDef | null; cW: number; cH: number }) {
   if (!active || cW === 0 || cH === 0) return null;
 
-  // Info panel anchor: top-center of panel (bottom: 92px, centered at 75% of canvas)
-  const PANEL_H = 145;
+  // InfoPanel anchor: top-center of panel (bottom: 56px, panel height ~155px, centered at 75% of canvas width)
   const ax = cW * 0.75;
-  const ay = cH - 92 - PANEL_H;
+  const ay = cH - 56 - 155;
 
-  // Car target point
   const tx = active.carTarget[0] * cW;
   const ty = active.carTarget[1] * cH;
 
-  // Quadratic bezier — bows toward the midpoint between anchor and target
-  const cx1 = ax + (tx - ax) * 0.35;
-  const cy1 = ay - Math.abs(ay - ty) * 0.18;
+  // Gentle quadratic bezier — control point bows slightly toward the target
+  const cx1 = ax + (tx - ax) * 0.30;
+  const cy1 = ay + (ty - ay) * 0.15;
   const d = `M ${ax} ${ay} Q ${cx1} ${cy1} ${tx} ${ty}`;
 
   return (
@@ -101,51 +105,54 @@ function ConnectorLine({ active, cW, cH }: { active: ServiceDef | null; cW: numb
       style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 16 }}
       viewBox={`0 0 ${cW} ${cH}`}
     >
-      <AnimatePresence mode="wait">
+      {/*
+        Using AnimatePresence without mode="wait" (default "sync"):
+        exit and enter run concurrently, so switching services never leaves
+        an empty gap. mode="wait" was the bug — it required the 1s exit to
+        complete before the new line could appear.
+      */}
+      <AnimatePresence>
         <motion.g key={active.id}>
-          {/* Connector path */}
+          {/* Connector path — delayed so the description panel appears first */}
           <motion.path
             d={d}
             fill="none"
             stroke={active.accent}
             strokeWidth={0.7}
-            strokeOpacity={0.42}
+            strokeOpacity={0.45}
             initial={{ pathLength: 0, opacity: 0 }}
             animate={{ pathLength: 1, opacity: 1 }}
-            exit={{ pathLength: 0, opacity: 0 }}
-            transition={{ duration: 1.0, ease: [0.16, 1, 0.3, 1] }}
+            exit={{ opacity: 0, transition: { duration: 0.25 } }}
+            transition={{ pathLength: { duration: 0.9, delay: 0.55, ease: [0.16, 1, 0.3, 1] }, opacity: { duration: 0.3, delay: 0.55 } }}
           />
           {/* Panel anchor tick */}
           <motion.line
-            x1={ax - 6} y1={ay} x2={ax + 6} y2={ay}
+            x1={ax - 7} y1={ay} x2={ax + 7} y2={ay}
             stroke={active.accent}
             strokeWidth={0.7}
-            strokeOpacity={0.5}
             initial={{ scaleX: 0, opacity: 0 }}
-            animate={{ scaleX: 1, opacity: 1 }}
-            exit={{ scaleX: 0, opacity: 0 }}
-            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            animate={{ scaleX: 1, opacity: 0.55 }}
+            exit={{ opacity: 0, transition: { duration: 0.2 } }}
+            transition={{ delay: 0.55, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
           />
           {/* Car target dot */}
           <motion.circle
-            cx={tx} cy={ty} r={2}
+            cx={tx} cy={ty} r={2.5}
             fill={active.accent}
-            fillOpacity={0.8}
             initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
-            transition={{ delay: 0.62, duration: 0.36, ease: [0.16, 1, 0.3, 1] }}
+            animate={{ scale: 1, opacity: 0.8 }}
+            exit={{ opacity: 0, transition: { duration: 0.2 } }}
+            transition={{ delay: 1.1, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
           />
-          {/* Pulse ring */}
+          {/* Pulse ring — explicit exit transition prevents repeat from blocking AnimatePresence */}
           <motion.circle
             cx={tx} cy={ty} r={2}
             fill="none"
             stroke={active.accent}
             strokeWidth={0.5}
-            initial={{ r: 2, opacity: 0.55 }}
-            animate={{ r: 13, opacity: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ delay: 0.75, duration: 1.5, repeat: Infinity, ease: 'easeOut' }}
+            animate={{ r: [2, 14], opacity: [0.55, 0] }}
+            exit={{ opacity: 0, transition: { duration: 0.15 } }}
+            transition={{ delay: 1.3, duration: 1.5, repeat: Infinity, ease: 'easeOut' }}
           />
         </motion.g>
       </AnimatePresence>
@@ -163,7 +170,7 @@ function InfoPanel({ s, onClose }: { s: ServiceDef | null; onClose: () => void }
           className="pointer-events-auto"
           style={{
             position: 'absolute',
-            bottom: 92,
+            bottom: 56,
             left: '75%',
             transform: 'translateX(-50%)',
             width: 'clamp(220px, 28%, 290px)',
@@ -203,12 +210,12 @@ function InfoPanel({ s, onClose }: { s: ServiceDef | null; onClose: () => void }
               <button
                 onClick={onClose}
                 style={{ color: 'rgba(220,215,204,0.24)', fontSize: 9, background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', lineHeight: 1, marginLeft: 10, flexShrink: 0 }}
-                onMouseEnter={e => (e.currentTarget.style.color = 'rgba(220,215,204,0.7)')}
+                onMouseEnter={e => (e.currentTarget.style.color = 'rgba(220,215,204,0.72)')}
                 onMouseLeave={e => (e.currentTarget.style.color = 'rgba(220,215,204,0.24)')}
               >✕</button>
             </div>
             <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', marginBottom: 11 }} />
-            <p style={{ fontFamily: 'var(--font-sans)', fontSize: 11.5, lineHeight: 2.0, color: 'rgba(215,210,200,0.40)' }}>{s.body}</p>
+            <p style={{ fontFamily: 'var(--font-sans)', fontSize: 11.5, lineHeight: 2.0, color: 'rgba(215,210,200,0.42)' }}>{s.body}</p>
           </div>
         </motion.div>
       )}
@@ -216,7 +223,7 @@ function InfoPanel({ s, onClose }: { s: ServiceDef | null; onClose: () => void }
   );
 }
 
-/* ─── SERVICE NAV ─── */
+/* ─── SERVICE NAV — right-side vertical, redesigned for clarity and presence ─── */
 function ServiceNav({
   activeId,
   onSelect,
@@ -227,114 +234,117 @@ function ServiceNav({
   ready: boolean;
 }) {
   const [hoverId, setHoverId] = useState<string | null>(null);
-  const activeIdx = SERVICES.findIndex(s => s.id === activeId);
-  const activeService = SERVICES.find(s => s.id === activeId);
 
   return (
     <nav
       aria-label="Dettagli services"
       style={{
         position: 'absolute',
-        bottom: 0,
-        left: '50%',
         right: 0,
-        height: 80,
+        top: '50%',
+        transform: 'translateY(-50%)',
+        width: 200,
         zIndex: 20,
         pointerEvents: ready ? 'auto' : 'none',
         opacity: ready ? 1 : 0,
         transition: 'opacity 1.6s ease',
-        borderTop: '1px solid rgba(255,255,255,0.06)',
-        display: 'flex',
-        flexDirection: 'column',
+        background: 'rgba(5,4,3,0.76)',
+        backdropFilter: 'blur(22px)',
+        WebkitBackdropFilter: 'blur(22px)',
+        borderLeft: '1px solid rgba(255,255,255,0.07)',
       }}
     >
-      {/* Sliding accent indicator — rides the top edge */}
-      <div style={{ position: 'relative', height: 1, background: 'rgba(255,255,255,0.04)', flexShrink: 0 }}>
-        <motion.div
-          style={{ position: 'absolute', top: 0, height: 1 }}
-          animate={activeIdx >= 0
-            ? { left: `${activeIdx * 20}%`, width: '20%', background: activeService?.accent ?? 'transparent', opacity: 1 }
-            : { opacity: 0 }
-          }
-          transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
-        />
-      </div>
+      <div style={{ height: 1, background: 'rgba(255,255,255,0.07)' }} />
 
-      {/* Items */}
-      <div style={{ display: 'flex', flex: 1 }}>
-        {SERVICES.map((s, i) => {
-          const isActive = activeId === s.id;
-          const isHover = hoverId === s.id;
+      {SERVICES.map((s, i) => {
+        const isActive = activeId === s.id;
+        const isHover = hoverId === s.id && !isActive;
 
-          return (
-            <button
-              key={s.id}
-              onClick={() => onSelect(s.id)}
-              onMouseEnter={() => setHoverId(s.id)}
-              onMouseLeave={() => setHoverId(null)}
-              aria-pressed={isActive}
-              style={{
-                flex: 1,
-                background: isActive
-                  ? `radial-gradient(ellipse at 50% 160%, ${s.accent}14 0%, transparent 65%)`
+        return (
+          <button
+            key={s.id}
+            onClick={() => onSelect(s.id)}
+            onMouseEnter={() => setHoverId(s.id)}
+            onMouseLeave={() => setHoverId(null)}
+            aria-pressed={isActive}
+            style={{
+              display: 'block',
+              width: '100%',
+              background: isActive
+                ? `linear-gradient(to left, ${s.accent}12 0%, transparent 72%)`
+                : isHover
+                  ? 'rgba(255,255,255,0.025)'
                   : 'transparent',
-                border: 'none',
-                borderRight: i < 4 ? '1px solid rgba(255,255,255,0.045)' : 'none',
-                cursor: 'pointer',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 5,
-                padding: '0 6px',
-                position: 'relative',
-                transition: 'background 0.5s ease, transform 0.4s cubic-bezier(0.16,1,0.3,1)',
-                transform: isHover && !isActive ? 'translateY(-3px)' : 'translateY(0)',
+              border: 'none',
+              borderBottom: '1px solid rgba(255,255,255,0.055)',
+              borderLeft: 'none',
+              cursor: 'pointer',
+              padding: '15px 20px 15px 0',
+              textAlign: 'right',
+              position: 'relative',
+              transition: 'background 0.45s ease',
+            }}
+          >
+            {/* Left accent strip */}
+            <div style={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: isActive ? 2 : 1,
+              background: isActive ? s.accent : 'rgba(255,255,255,0.06)',
+              boxShadow: isActive ? `0 0 10px 1px ${s.accent}55` : 'none',
+              transition: 'background 0.45s ease, width 0.3s ease, box-shadow 0.45s ease',
+            }} />
+
+            {/* Number */}
+            <div style={{
+              fontFamily: "'Courier New', monospace",
+              fontSize: 7.5,
+              letterSpacing: '0.24em',
+              color: isActive ? s.accent : 'rgba(255,255,255,0.20)',
+              marginBottom: 7,
+              transition: 'color 0.4s ease',
+            }}>
+              {String(i + 1).padStart(2, '0')}
+            </div>
+
+            {/* Title */}
+            <motion.div
+              animate={{ x: isHover ? -3 : 0 }}
+              transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
+              style={{
+                fontFamily: "var(--font-cormorant,'Cormorant',serif)",
+                fontSize: 14.5,
+                fontWeight: 400,
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                color: isActive ? '#F2ECE0' : isHover ? 'rgba(210,204,193,0.66)' : 'rgba(200,195,185,0.36)',
+                lineHeight: 1.15,
+                whiteSpace: 'nowrap',
+                marginBottom: 6,
+                transition: 'color 0.4s ease',
               }}
             >
-              {/* Number */}
-              <span style={{
-                fontFamily: "'Courier New', monospace",
-                fontSize: 7,
-                letterSpacing: '0.24em',
-                color: isActive ? s.accent : 'rgba(255,255,255,0.16)',
-                transition: 'color 0.4s ease',
-                lineHeight: 1,
-                display: 'block',
-              }}>
-                {String(i + 1).padStart(2, '0')}
-              </span>
+              {s.title}
+            </motion.div>
 
-              {/* Title */}
-              <span style={{
-                fontFamily: "var(--font-cormorant,'Cormorant',serif)",
-                fontSize: 10.5,
-                fontWeight: 400,
-                letterSpacing: '0.17em',
-                textTransform: 'uppercase',
-                color: isActive ? '#F0EBE0' : isHover ? 'rgba(200,195,185,0.58)' : 'rgba(200,195,185,0.30)',
-                lineHeight: 1,
-                whiteSpace: 'nowrap',
-                transition: 'color 0.4s ease',
-                display: 'block',
-              }}>
-                {s.title}
-              </span>
+            {/* Tag — always present; opacity communicates interactivity */}
+            <div style={{
+              fontFamily: 'var(--font-sans)',
+              fontSize: 7,
+              letterSpacing: '0.20em',
+              textTransform: 'uppercase',
+              color: isActive ? s.accent : isHover ? 'rgba(200,190,175,0.40)' : 'rgba(200,190,175,0.22)',
+              transition: 'color 0.45s ease',
+            }}>
+              {s.tag}
+            </div>
+          </button>
+        );
+      })}
 
-              {/* Accent dot */}
-              <div style={{
-                width: 3,
-                height: 3,
-                borderRadius: '50%',
-                background: s.accent,
-                opacity: isActive ? 0.85 : 0,
-                transition: 'opacity 0.45s ease',
-                flexShrink: 0,
-              }} />
-            </button>
-          );
-        })}
-      </div>
+      <div style={{ borderTop: '1px solid rgba(255,255,255,0.055)' }} />
     </nav>
   );
 }
@@ -394,7 +404,6 @@ export default function DettagliScene({ mouseRef }: { mouseRef: React.MutableRef
       renderer.toneMappingExposure = 0.38;
       cleanups.push(() => renderer.dispose());
 
-      // Expose initial canvas size to React for SVG connector
       setCanvasSize({ w: W, h: H });
 
       /* SCENE */
@@ -406,10 +415,9 @@ export default function DettagliScene({ mouseRef }: { mouseRef: React.MutableRef
       camera.position.set(DEFAULT_CAM.px, DEFAULT_CAM.py, DEFAULT_CAM.pz);
       camera.lookAt(DEFAULT_CAM.lx, DEFAULT_CAM.ly, DEFAULT_CAM.lz);
 
-      /* LIGHTING */
+      /* LIGHTING — car at y=0.22; all spotlight targets shifted to match */
       scene.add(new THREE.AmbientLight('#C4BCB0', 0.008));
 
-      // Car raised to y=0.22; spotlight targets shifted -0.13 from y=0.35 baseline
       const key = new THREE.SpotLight('#FFF6E8', 0.55, 18, 0.20, 0.55, 1.5);
       key.position.set(0.5, 9.2, 2.3); key.target.position.set(0.2, 0.59, 1.5);
       key.castShadow = true; key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -0.00008; key.shadow.radius = 7;
@@ -587,7 +595,7 @@ export default function DettagliScene({ mouseRef }: { mouseRef: React.MutableRef
         garageClone.position.set(0, 0.85, 0);
         scene.add(garageClone);
 
-        /* CAR — lowered to y=0.22 so tires rest naturally on floor */
+        /* CAR — y=0.22 grounds the tires naturally on the floor */
         const model = gltf.scene as ThreeNS.Object3D;
         const bodyPaint = new THREE.MeshPhysicalMaterial({
           color: '#030303', metalness: 0.94, roughness: 0.04,
@@ -658,22 +666,31 @@ export default function DettagliScene({ mouseRef }: { mouseRef: React.MutableRef
           pointerEvents: 'none', zIndex: 3,
         }}
       />
+      {/* Right-edge vignette — reinforces the nav's dark backdrop against bright garage windows */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'absolute', top: 0, right: 0, width: '22%', height: '100%',
+          background: 'linear-gradient(to left, rgba(4,3,2,0.65) 0%, rgba(4,3,2,0.20) 55%, rgba(4,3,2,0) 100%)',
+          pointerEvents: 'none', zIndex: 4,
+        }}
+      />
 
-      {/* SVG connector line */}
+      {/* SVG connector line — only renders when canvas size is known */}
       <ConnectorLine active={activeService} cW={canvasSize.w} cH={canvasSize.h} />
 
       {/* Description panel */}
       <InfoPanel s={activeService} onClose={handleClose} />
 
-      {/* Horizontal bottom service selector */}
+      {/* Right-side service selector */}
       <ServiceNav activeId={activeId} onSelect={handleSelect} ready={ready} />
 
       {/* CC Attribution */}
       <div
         aria-hidden="true"
         style={{
-          position: 'absolute', bottom: 88, right: 14,
-          fontFamily: 'var(--font-sans)', fontSize: 8, letterSpacing: '0.1em',
+          position: 'absolute', bottom: 10, right: 14,
+          fontFamily: 'var(--font-sans)', fontSize: 8, letterSpacing: '0.10em',
           color: 'rgba(180,175,165,0.16)', pointerEvents: 'none', zIndex: 5,
         }}
       >
